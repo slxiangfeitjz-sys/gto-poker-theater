@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区域7：控制室——EV仪表盘 | GTO扑克大剧院</title>
+<style>
+  /* ===== 全局变量 ===== */
+  :root {
+    --bg-dark: #0d0d14;
+    --bg-card: rgba(255, 255, 255, 0.05);
+    --text-primary: #f0e6d3;
+    --text-secondary: #b8a99a;
+    --accent-gold: #d4a853;
+    --accent-red: #c75c5c;
+    --accent-green: #5cc78a;
+    --accent-blue: #5c8ac7;
+    --accent-orange: #c7a35c;
+    --glass: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    overflow-x: hidden;
+  }
+
+  /* ===== 导航栏 ===== */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 1000;
+    background: rgba(13, 13, 20, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--glass-border);
+    padding: 0 20px;
+  }
+  .nav-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+  }
+  .nav-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--accent-gold);
+    letter-spacing: 2px;
+  }
+  .nav-links {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .nav-links a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+  }
+  .nav-links a:hover {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.06);
+  }
+  .nav-links a.active {
+    color: var(--accent-gold);
+    background: rgba(212, 168, 83, 0.12);
+    font-weight: 600;
+  }
+  @media (max-width: 900px) {
+    .nav-links a { font-size: 0.65rem; padding: 3px 6px; }
+  }
+
+  /* ===== 区域基础 ===== */
+  section {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px 24px 40px;
+    position: relative;
+  }
+
+  .glass-card {
+    background: var(--glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 30px;
+  }
+
+  /* ===== 区域7：EV仪表盘 ===== */
+  #ev {
+    position: relative;
+    overflow: hidden;
+  }
+  /* 控制室背景网格 */
+  .cockpit-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 30% 20%, rgba(92, 138, 199, 0.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 80%, rgba(212, 168, 83, 0.04) 0%, transparent 50%),
+      linear-gradient(180deg, rgba(13,13,20,1) 0%, rgba(18,18,30,1) 100%);
+  }
+  .cockpit-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+  /* 扫描线效果 */
+  .scanline {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(92, 138, 199, 0.3), transparent);
+    animation: scanline 6s linear infinite;
+    pointer-events: none;
+  }
+  @keyframes scanline {
+    0% { transform: translateY(0); opacity: 0; }
+    5% { opacity: 1; }
+    95% { opacity: 1; }
+    100% { transform: translateY(100vh); opacity: 0; }
+  }
+
+  .ev-inner {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .ev-header {
+    text-align: center;
+  }
+  .ev-header h1 {
+    font-size: clamp(2rem, 4.5vw, 3.2rem);
+    font-weight: 800;
+    color: var(--accent-gold);
+    letter-spacing: 3px;
+    text-shadow: 0 0 40px rgba(212,168,83,0.2);
+    margin-bottom: 8px;
+  }
+  .ev-header .subtitle {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+  }
+
+  /* ===== 仪表盘区域 ===== */
+  .dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+    width: 100%;
+  }
+  .gauge-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .gauge-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .gauge-value {
+    font-size: 1.3rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+  }
+  .gauge-value.pos { color: var(--accent-green); }
+  .gauge-value.neg { color: var(--accent-red); }
+  .gauge-value.neu { color: var(--accent-blue); }
+
+  /* SVG仪表盘 */
+  .gauge-svg {
+    width: 160px;
+    height: 100px;
+  }
+  .gauge-svg-large {
+    width: 280px;
+    height: 170px;
+  }
+  .gauge-track {
+    fill: none;
+    stroke: rgba(255,255,255,0.1);
+    stroke-width: 12;
+    stroke-linecap: round;
+  }
+  .gauge-fill {
+    fill: none;
+    stroke-width: 12;
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s ease;
+  }
+  .gauge-fill-green { stroke: var(--accent-green); }
+  .gauge-fill-red { stroke: var(--accent-red); }
+  .gauge-fill-blue { stroke: var(--accent-blue); }
+  .gauge-fill-orange { stroke: var(--accent-orange); }
+  .gauge-fill-gold { stroke: var(--accent-gold); }
+  .gauge-ticks {
+    stroke: rgba(255,255,255,0.2);
+    stroke-width: 1;
+  }
+  .gauge-needle {
+    fill: var(--accent-gold);
+    filter: drop-shadow(0 0 6px rgba(212,168,83,0.5));
+    transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: 80px 80px; /* center for 160px width */
+  }
+  .gauge-needle-large {
+    transform-origin: 140px 130px; /* center for 280px width */
+  }
+
+  /* 大仪表盘特殊样式 */
+  .main-gauge-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 20px 40px;
+  }
+  .main-gauge-wrapper .gauge-label {
+    font-size: 1rem;
+    color: var(--accent-gold);
+    letter-spacing: 4px;
+  }
+  .ev-readout {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .ev-readout .value {
+    font-size: 2.2rem;
+    font-weight: 800;
+    font-family: 'Courier New', monospace;
+    color: var(--accent-green);
+  }
+  .ev-readout .unit {
+    font-size: 1rem;
+    color: var(--text-secondary);
+  }
+
+  /* ===== 统计面板 ===== */
+  .stats-panel {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    width: 100%;
+    max-width: 900px;
+  }
+  .stat-item {
+    background: var(--glass);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--glass-border);
+    border-radius: 14px;
+    padding: 18px 14px;
+    text-align: center;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .stat-item:hover {
+    transform: translateY(-2px);
+    border-color: var(--accent-gold);
+  }
+  .stat-item .stat-title {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+  .stat-item .stat-num {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+  }
+  .stat-num.green { color: var(--accent-green); }
+  .stat-num.red { color: var(--accent-red); }
+  .stat-num.gold { color: var(--accent-gold); }
+  .stat-num.blue { color: var(--accent-blue); }
+
+  /* ===== 文字区域 ===== */
+  .ev-text {
+    max-width: 800px;
+    text-align: center;
+  }
+  .ev-text p {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--text-secondary);
+  }
+  .ev-text p strong {
+    color: var(--text-primary);
+  }
+
+  .memory-hook {
+    background: rgba(212, 168, 83, 0.08);
+    border: 1px solid rgba(212, 168, 83, 0.25);
+    border-radius: 14px;
+    padding: 18px 28px;
+    max-width: 700px;
+    text-align: center;
+  }
+  .memory-hook .hook-title {
+    font-size: 0.75rem;
+    color: var(--accent-gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .memory-hook .hook-text {
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    font-style: italic;
+  }
+
+  /* ===== 控制按钮 ===== */
+  .controls {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn {
+    padding: 12px 28px;
+    border-radius: 10px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 1px;
+  }
+  .btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: var(--accent-gold);
+  }
+  .btn:active {
+    transform: scale(0.97);
+  }
+  .btn.primary {
+    background: rgba(212, 168, 83, 0.15);
+    border-color: rgba(212, 168, 83, 0.4);
+    color: var(--accent-gold);
+  }
+  .btn.primary:hover {
+    background: rgba(212, 168, 83, 0.25);
+  }
+
+  /* ===== 日志面板 ===== */
+  .log-panel {
+    width: 100%;
+    max-width: 700px;
+    height: 120px;
+    overflow-y: auto;
+    background: rgba(0,0,0,0.25);
+    border-radius: 12px;
+    padding: 14px 18px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .log-entry {
+    opacity: 0;
+    animation: fadeInLog 0.3s ease forwards;
+  }
+  @keyframes fadeInLog {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .log-ok { color: var(--accent-green); }
+  .log-bad { color: var(--accent-red); }
+  .log-info { color: var(--accent-blue); }
+
+  /* ===== 区域导航 ===== */
+  .section-nav {
+    display: flex;
+    gap: 16px;
+    margin-top: 8px;
+  }
+  .section-nav a {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    padding: 10px 22px;
+    border-radius: 10px;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    transition: all 0.25s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-nav a:hover {
+    color: var(--accent-gold);
+    border-color: var(--accent-gold);
+    background: rgba(212,168,83,0.08);
+  }
+
+  /* ===== 响应式 ===== */
+  @media (max-width: 768px) {
+    .stats-panel { grid-template-columns: repeat(2, 1fr); }
+    .gauge-svg { width: 130px; height: 80px; }
+    .gauge-svg-large { width: 220px; height: 140px; }
+    .gauge-needle { transform-origin: 65px 65px !important; }
+    .gauge-needle-large { transform-origin: 110px 105px !important; }
+    .ev-readout .value { font-size: 1.6rem; }
+  }
+  @media (max-width: 480px) {
+    .stats-panel { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* 数值闪烁动画 */
+  .flash {
+    animation: flashVal 0.3s ease;
+  }
+  @keyframes flashVal {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); color: #fff; }
+    100% { transform: scale(1); }
+  }
+
+  /* 运行指示灯 */
+  .indicator {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 8px var(--accent-green);
+    animation: blink 1.2s ease-in-out infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .indicator-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== 导航栏 ===== -->
+<nav>
+  <div class="nav-inner">
+    <div class="nav-title">GTO 扑克大剧院</div>
+    <div class="nav-links">
+      <a href="gto-theater-range.html">范围</a>
+      <a href="gto-theater-balance.html">平衡</a>
+      <a href="gto-theater-frequency.html">频率</a>
+      <a href="gto-theater-odds.html">赔率</a>
+      <a href="gto-theater-gametree.html">博弈树</a>
+      <a href="gto-theater-position.html">位置</a>
+      <a href="gto-theater-ev.html" class="active">EV</a>
+      <a href="gto-theater-exploitation.html">剥削</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== 区域7：EV仪表盘 ===== -->
+<section id="ev">
+  <div class="cockpit-bg"></div>
+  <div class="cockpit-grid"></div>
+  <div class="scanline"></div>
+
+  <div class="ev-inner">
+
+    <!-- 标题 -->
+    <div class="ev-header">
+      <h1>控制室</h1>
+      <div class="subtitle">EV 仪表盘 · Expected Value</div>
+    </div>
+
+    <!-- 仪表盘区域 -->
+    <div class="dashboard">
+      <!-- 小仪表盘：胜率 -->
+      <div class="gauge-container">
+        <svg class="gauge-svg" viewBox="0 0 160 100">
+          <path class="gauge-track" d="M 20 80 A 60 60 0 0 1 140 80" />
+          <path class="gauge-fill gauge-fill-blue" d="M 20 80 A 60 60 0 0 1 140 80" stroke-dasharray="0 189" id="gauge-fill-eq" />
+          <g class="gauge-ticks">
+            <line x1="20" y1="80" x2="26" y2="74" />
+            <line x1="80" y1="20" x2="80" y2="26" />
+            <line x1="140" y1="80" x2="134" y2="74" />
+          </g>
+          <polygon class="gauge-needle" points="80,80 76,20 80,14 84,20" id="needle-eq" />
+          <circle cx="80" cy="80" r="4" fill="rgba(255,255,255,0.3)" />
+        </svg>
+        <div class="gauge-label">胜率 %</div>
+        <div class="gauge-value neu" id="val-eq">—</div>
+      </div>
+
+      <!-- 大仪表盘：EV核心 -->
+      <div class="main-gauge-wrapper glass-card">
+        <div class="indicator-wrap">
+          <div class="indicator"></div>
+          <span>系统运行中</span>
+        </div>
+        <svg class="gauge-svg-large" viewBox="0 0 280 170">
+          <!-- 轨道背景 -->
+          <path class="gauge-track" d="M 30 140 A 110 110 0 0 1 250 140" />
+          <!-- EV刻度填充 -->
+          <path class="gauge-fill gauge-fill-green" d="M 30 140 A 110 110 0 0 1 250 140" stroke-dasharray="0 346" id="gauge-fill-ev" />
+          <!-- 刻度线 -->
+          <g class="gauge-ticks">
+            <line x1="30" y1="140" x2="38" y2="132" />
+            <line x1="80" y1="43" x2="80" y2="52" />
+            <line x1="140" y1="30" x2="140" y2="38" />
+            <line x1="200" y1="43" x2="200" y2="52" />
+            <line x1="250" y1="140" x2="242" y2="132" />
+          </g>
+          <!-- 刻度标签 -->
+          <text x="24" y="156" fill="var(--accent-red)" font-size="11" font-family="monospace" opacity="0.7">-EV</text>
+          <text x="132" y="22" fill="var(--text-secondary)" font-size="11" font-family="monospace" opacity="0.7">0</text>
+          <text x="242" y="156" fill="var(--accent-green)" font-size="11" font-family="monospace" opacity="0.7">+EV</text>
+          <!-- 指针 -->
+          <polygon class="gauge-needle gauge-needle-large" points="140,130 136,38 140,30 144,38" id="needle-ev" />
+          <circle cx="140" cy="130" r="6" fill="rgba(255,255,255,0.3)" />
+          <circle cx="140" cy="130" r="3" fill="var(--accent-gold)" />
+        </svg>
+        <div class="gauge-label">核心 EV 期望值</div>
+        <div class="ev-readout">
+          <span class="value" id="main-ev-val">0.00</span>
+          <span class="unit">BB</span>
+        </div>
+      </div>
+
+      <!-- 小仪表盘：样本量 -->
+      <div class="gauge-container">
+        <svg class="gauge-svg" viewBox="0 0 160 100">
+          <path class="gauge-track" d="M 20 80 A 60 60 0 0 1 140 80" />
+          <path class="gauge-fill gauge-fill-orange" d="M 20 80 A 60 60 0 0 1 140 80" stroke-dasharray="0 189" id="gauge-fill-sample" />
+          <g class="gauge-ticks">
+            <line x1="20" y1="80" x2="26" y2="74" />
+            <line x1="80" y1="20" x2="80" y2="26" />
+            <line x1="140" y1="80" x2="134" y2="74" />
+          </g>
+          <polygon class="gauge-needle" points="80,80 76,20 80,14 84,20" id="needle-sample" />
+          <circle cx="80" cy="80" r="4" fill="rgba(255,255,255,0.3)" />
+        </svg>
+        <div class="gauge-label">样本量</div>
+        <div class="gauge-value neu" id="val-sample">—</div>
+      </div>
+    </div>
+
+    <!-- 统计面板 -->
+    <div class="stats-panel">
+      <div class="stat-item">
+        <div class="stat-title">总决策数</div>
+        <div class="stat-num gold" id="stat-total">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-title">+EV 决策</div>
+        <div class="stat-num green" id="stat-pos">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-title">-EV 决策</div>
+        <div class="stat-num red" id="stat-neg">0</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-title">平均 EV</div>
+        <div class="stat-num blue" id="stat-avg">0.00</div>
+      </div>
+    </div>
+
+    <!-- 控制按钮 -->
+    <div class="controls">
+      <button class="btn primary" id="btn-once" onclick="simulateOnce()">单次决策</button>
+      <button class="btn primary" id="btn-ten" onclick="simulateTen()">10次模拟</button>
+      <button class="btn primary" id="btn-hundred" onclick="simulateHundred()">100次模拟</button>
+      <button class="btn" id="btn-reset" onclick="resetSim()">重置系统</button>
+    </div>
+
+    <!-- 日志面板 -->
+    <div class="log-panel" id="log-panel">
+      <div class="log-info log-entry">系统就绪。等待决策输入...</div>
+    </div>
+
+    <!-- 概念解释 -->
+    <div class="ev-text glass-card">
+      <p>
+        <strong>EV（Expected Value，期望值）</strong>是GTO策略的核心度量指标。它表示你在某个决策点上，长期执行该行动所能获得的平均收益。正EV意味着长期来看你会盈利，负EV则意味着亏损。优秀的扑克玩家不会只关注单次结果，而是追求每一个决策点的EV最大化。即便一手牌输了，只要你的决策是+EV的，长期重复就会带来收益。这就是"过程正确，结果随缘"的数学本质。
+      </p>
+    </div>
+
+    <!-- 记忆钩子 -->
+    <div class="memory-hook">
+      <div class="hook-title">记忆钩子</div>
+      <div class="hook-text">"每次决策前，问自己：这个选择的EV是正还是负？长期做+EV的事，利润自然到来。"</div>
+    </div>
+
+    <!-- 区域导航 -->
+    <div class="section-nav">
+      <a href="gto-theater-gametree.html">&#8592; 上一区域：博弈树</a>
+      <a href="gto-theater-exploitation.html">下一区域：剥削 &#8594;</a>
+    </div>
+  </div>
+</section>
+
+<script>
+  // ===== 状态 =====
+  let totalDecisions = 0;
+  let posDecisions = 0;
+  let negDecisions = 0;
+  let evSum = 0;
+  let running = false;
+
+  const logPanel = document.getElementById('log-panel');
+  const statTotal = document.getElementById('stat-total');
+  const statPos = document.getElementById('stat-pos');
+  const statNeg = document.getElementById('stat-neg');
+  const statAvg = document.getElementById('stat-avg');
+  const mainEvVal = document.getElementById('main-ev-val');
+  const needleEv = document.getElementById('needle-ev');
+  const needleEq = document.getElementById('needle-eq');
+  const needleSample = document.getElementById('needle-sample');
+  const gaugeFillEv = document.getElementById('gauge-fill-ev');
+  const gaugeFillEq = document.getElementById('gauge-fill-eq');
+  const gaugeFillSample = document.getElementById('gauge-fill-sample');
+  const valEq = document.getElementById('val-eq');
+  const valSample = document.getElementById('val-sample');
+
+  // 仪表盘参数
+  const EV_MIN = -5, EV_MAX = 5;     // 大表盘范围
+  const EQ_MIN = 0, EQ_MAX = 100;    // 胜率表盘范围
+  const SAMPLE_MAX = 500;            // 样本表盘上限
+
+  // 计算大表盘指针角度（半圆180度，-5到+5）
+  function evToAngle(ev) {
+    const t = (ev - EV_MIN) / (EV_MAX - EV_MIN); // 0~1
+    return (1 - t) * 180; // 180度（左）到0度（右）
+  }
+  // 小表盘指针角度（胜率 0~100% 映射到 180~0度）
+  function eqToAngle(eq) {
+    const t = eq / 100;
+    return (1 - t) * 180;
+  }
+  // 样本量角度
+  function sampleToAngle(n) {
+    const t = Math.min(n / SAMPLE_MAX, 1);
+    return (1 - t) * 180;
+  }
+  // 弧线长度（半圆周）
+  const LARGE_ARC = 110 * Math.PI; // ≈ 345
+  const SMALL_ARC = 60 * Math.PI;  // ≈ 189
+
+  function updateDisplays() {
+    statTotal.textContent = totalDecisions;
+    statPos.textContent = posDecisions;
+    statNeg.textContent = negDecisions;
+    const avg = totalDecisions > 0 ? (evSum / totalDecisions) : 0;
+    statAvg.textContent = (avg >= 0 ? '+' : '') + avg.toFixed(2);
+    statAvg.className = 'stat-num ' + (avg >= 0 ? 'green' : 'red');
+
+    mainEvVal.textContent = (avg >= 0 ? '+' : '') + avg.toFixed(2);
+    mainEvVal.className = 'value ' + (avg >= 0 ? 'green' : 'red');
+    mainEvVal.classList.remove('flash');
+    void mainEvVal.offsetWidth; // reflow
+    mainEvVal.classList.add('flash');
+
+    // 大表盘指针
+    const angle = evToAngle(avg);
+    needleEv.style.transform = `rotate(${angle - 90}deg)`; // 初始朝上，需要调整
+    // 大表盘填充
+    const fillRatio = Math.max(0, Math.min(1, (avg - EV_MIN) / (EV_MAX - EV_MIN)));
+    gaugeFillEv.setAttribute('stroke-dasharray', `${fillRatio * LARGE_ARC} ${LARGE_ARC}`);
+
+    // 胜率表盘（显示最近一次的胜率）
+    const lastEq = window._lastEq !== undefined ? window._lastEq : 50;
+    const eqAngle = eqToAngle(lastEq);
+    needleEq.style.transform = `rotate(${eqAngle - 90}deg)`;
+    valEq.textContent = lastEq.toFixed(1) + '%';
+    valEq.className = 'gauge-value ' + (lastEq > 50 ? 'pos' : (lastEq < 50 ? 'neg' : 'neu'));
+    const eqFill = lastEq / 100;
+    gaugeFillEq.setAttribute('stroke-dasharray', `${eqFill * SMALL_ARC} ${SMALL_ARC}`);
+
+    // 样本表盘
+    const sampleAngle = sampleToAngle(totalDecisions);
+    needleSample.style.transform = `rotate(${sampleAngle - 90}deg)`;
+    valSample.textContent = totalDecisions;
+    const sampleFill = Math.min(totalDecisions / SAMPLE_MAX, 1);
+    gaugeFillSample.setAttribute('stroke-dasharray', `${sampleFill * SMALL_ARC} ${SMALL_ARC}`);
+  }
+
+  function addLog(text, type) {
+    const div = document.createElement('div');
+    div.className = `log-${type} log-entry`;
+    div.textContent = `[${new Date().toLocaleTimeString('zh-CN',{hour12:false})}] ${text}`;
+    logPanel.appendChild(div);
+    logPanel.scrollTop = logPanel.scrollHeight;
+    // 限制行数
+    while (logPanel.children.length > 20) {
+      logPanel.removeChild(logPanel.firstChild);
+    }
+  }
+
+  // 模拟一次决策
+  function runDecision() {
+    // 模拟扑克场景：胜率 ~40-80%，底池大小随机
+    const eq = 40 + Math.random() * 40; // 40%~80% 胜率
+    const potSize = 10 + Math.random() * 30; // 10~40BB 底池
+    const betSize = potSize * (0.3 + Math.random() * 0.5); // 下注量
+
+    // 简化EV计算：EV = eq% * (pot + bet) - (1-eq%) * bet
+    const winAmount = potSize + betSize;
+    const loseAmount = betSize;
+    const ev = (eq / 100) * winAmount - (1 - eq / 100) * loseAmount;
+
+    totalDecisions++;
+    evSum += ev;
+    if (ev >= 0) posDecisions++;
+    else negDecisions++;
+    window._lastEq = eq;
+
+    return {
+      ev: ev,
+      eq: eq,
+      pot: potSize.toFixed(1),
+      bet: betSize.toFixed(1)
+    };
+  }
+
+  async function simulateOnce() {
+    if (running) return;
+    const result = runDecision();
+    updateDisplays();
+    const sign = result.ev >= 0 ? '+' : '';
+    const type = result.ev >= 0 ? 'ok' : 'bad';
+    addLog(`决策 #${totalDecisions}: 胜率${result.eq.toFixed(1)}% 底池${result.pot}BB 下注${result.bet}BB → EV ${sign}${result.ev.toFixed(2)}BB`, type);
+  }
+
+  async function simulateTen() {
+    if (running) return;
+    running = true;
+    addLog('开始 10 次模拟决策序列...', 'info');
+    for (let i = 0; i < 10; i++) {
+      const result = runDecision();
+      const sign = result.ev >= 0 ? '+' : '';
+      const type = result.ev >= 0 ? 'ok' : 'bad';
+      addLog(`  #${totalDecisions}: EV ${sign}${result.ev.toFixed(2)}BB`, type);
+      updateDisplays();
+      await sleep(120);
+    }
+    addLog('10次模拟完成。观察平均EV趋势。', 'info');
+    running = false;
+  }
+
+  async function simulateHundred() {
+    if (running) return;
+    running = true;
+    addLog('启动 100 次高速模拟...', 'info');
+    let batchLog = [];
+    for (let i = 0; i < 100; i++) {
+      const result = runDecision();
+      if (i % 20 === 19) {
+        const avg = evSum / totalDecisions;
+        const sign = avg >= 0 ? '+' : '';
+        batchLog.push(`  批次 ${Math.floor(i/20)+1}/5: 平均EV ${sign}${avg.toFixed(2)}BB`);
+      }
+      // 每10次更新一次UI
+      if (i % 10 === 9) {
+        updateDisplays();
+        await sleep(30);
+      }
+    }
+    updateDisplays();
+    batchLog.forEach(l => addLog(l, 'info'));
+    const finalAvg = evSum / totalDecisions;
+    const sign = finalAvg >= 0 ? '+' : '';
+    addLog(`100次模拟完成。最终平均EV: ${sign}${finalAvg.toFixed(2)}BB`, finalAvg >= 0 ? 'ok' : 'bad');
+    running = false;
+  }
+
+  function resetSim() {
+    if (running) return;
+    totalDecisions = 0;
+    posDecisions = 0;
+    negDecisions = 0;
+    evSum = 0;
+    window._lastEq = 50;
+    updateDisplays();
+    logPanel.innerHTML = '<div class="log-info log-entry">系统已重置。等待决策输入...</div>';
+  }
+
+  function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+  }
+
+  // 初始化
+  updateDisplays();
+</script>
+
+</body>
+</html>
