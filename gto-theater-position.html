@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>空中走道——位置望远镜 | GTO扑克大剧院</title>
+<style>
+:root {
+  --bg-dark: #0d0d14;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --text-primary: #f0e6d3;
+  --text-secondary: #b8a99a;
+  --accent-gold: #d4a853;
+  --accent-red: #c75c5c;
+  --accent-green: #5cc78a;
+  --accent-blue: #5c8ac7;
+  --accent-orange: #c7a35c;
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ============ 导航栏 ============ */
+nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 100;
+  background: rgba(13, 13, 20, 0.85);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 0;
+}
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0 20px;
+}
+.nav-item {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 13px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.nav-item:hover {
+  color: var(--text-primary);
+  background: var(--glass);
+  border-color: var(--glass-border);
+}
+.nav-item.current {
+  color: var(--accent-gold);
+  background: rgba(212, 168, 83, 0.12);
+  border-color: rgba(212, 168, 83, 0.3);
+  font-weight: 600;
+}
+
+/* ============ 星空背景 ============ */
+.stars-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: twinkle 3s infinite ease-in-out;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.2; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.3); }
+}
+
+/* ============ 区域基础样式 ============ */
+section {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 80px 24px 40px;
+}
+.section-content {
+  max-width: 1200px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 2;
+  position: relative;
+}
+
+/* ============ 毛玻璃卡片 ============ */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 30px;
+}
+
+/* ============ 标题区 ============ */
+.section-title {
+  text-align: center;
+  margin-bottom: 20px;
+  animation: fadeSlideUp 0.8s ease-out forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.section-title h1 {
+  font-size: 2.8rem;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  letter-spacing: 4px;
+  text-shadow: 0 0 30px rgba(212, 168, 83, 0.3);
+}
+.section-title h2 {
+  font-size: 1.3rem;
+  color: var(--accent-gold);
+  font-weight: 400;
+  letter-spacing: 2px;
+}
+
+/* ============ 走道视觉装饰 ============ */
+.catwalk {
+  width: 100%;
+  max-width: 900px;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, rgba(212, 168, 83, 0.4), transparent);
+  margin: 30px 0;
+  position: relative;
+  animation: fadeSlideUp 0.8s ease-out 0.2s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.catwalk::before, .catwalk::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  width: 8px; height: 8px;
+  background: var(--accent-gold);
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(212, 168, 83, 0.6);
+}
+.catwalk::before { left: 0; }
+.catwalk::after { right: 0; }
+
+/* ============ 望远镜展示区 ============ */
+.telescope-zone {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 60px;
+  margin: 20px 0;
+  width: 100%;
+  animation: fadeSlideUp 0.8s ease-out 0.4s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+  flex-wrap: wrap;
+}
+
+.telescope-stand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.4s ease, filter 0.4s ease;
+  position: relative;
+}
+.telescope-stand:hover {
+  transform: translateY(-8px) scale(1.05);
+  filter: drop-shadow(0 0 15px rgba(212, 168, 83, 0.4));
+}
+.telescope-stand:hover .scope-label {
+  color: var(--accent-gold);
+}
+.telescope-stand:hover .scope-tube {
+  stroke: var(--accent-gold);
+}
+
+/* 望远镜SVG样式 */
+.scope-svg {
+  width: 120px;
+  height: 160px;
+  overflow: visible;
+}
+.scope-tube { stroke: var(--text-secondary); stroke-width: 3; fill: none; transition: stroke 0.4s; }
+.scope-tube-fill { fill: rgba(255,255,255,0.06); transition: fill 0.4s; }
+.scope-tube-inner { stroke: var(--text-secondary); stroke-width: 2; fill: none; opacity: 0.5; }
+.scope-lens { stroke: var(--accent-gold); stroke-width: 2; fill: none; }
+.scope-lens-active { stroke: var(--accent-gold); stroke-width: 3; fill: none; filter: drop-shadow(0 0 8px rgba(212,168,83,0.7)); }
+.scope-stand { stroke: var(--text-secondary); stroke-width: 2; fill: none; opacity: 0.6; }
+.scope-glow { opacity: 0; transition: opacity 0.4s; }
+.telescope-stand:hover .scope-glow { opacity: 1; }
+.telescope-stand:hover .scope-tube-fill { fill: rgba(212, 168, 83, 0.08); }
+
+.scope-label {
+  margin-top: 12px;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  letter-spacing: 2px;
+  transition: color 0.4s;
+  text-align: center;
+}
+.scope-position-desc {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+/* 望远镜选中态 */
+.telescope-stand.active .scope-label { color: var(--accent-gold); }
+.telescope-stand.active .scope-tube { stroke: var(--accent-gold); }
+.telescope-stand.active .scope-tube-fill { fill: rgba(212, 168, 83, 0.12); }
+.telescope-stand.active .scope-glow { opacity: 1; }
+.telescope-stand.active .scope-lens { stroke: var(--accent-gold); stroke-width: 3; filter: drop-shadow(0 0 10px rgba(212,168,83,0.8)); }
+
+/* 视野指标条 */
+.vision-bar {
+  width: 80px;
+  height: 4px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.vision-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent-red), var(--accent-gold), var(--accent-green));
+  transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  width: 0%;
+}
+.vision-label {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  opacity: 0.6;
+  margin-top: 4px;
+}
+
+/* ============ 范围扇形图展示 ============ */
+.range-display {
+  width: 100%;
+  max-width: 700px;
+  min-height: 400px;
+  margin: 30px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeSlideUp 0.8s ease-out 0.6s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+  position: relative;
+}
+
+.range-display .glass-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 扇形图容器 */
+#fanChartCanvas {
+  margin: 20px auto;
+  display: block;
+}
+
+.range-info {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+.range-stat {
+  text-align: center;
+}
+.range-stat .stat-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+  transition: all 0.5s ease;
+}
+.range-stat .stat-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+/* 选中提示 */
+.select-hint {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+  font-size: 1.05rem;
+  opacity: 0.8;
+  animation: pulseHint 2.5s infinite ease-in-out;
+}
+@keyframes pulseHint {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+.select-hint .hint-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* 详情描述 */
+.range-detail-text {
+  margin-top: 20px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  text-align: center;
+  max-width: 500px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.5s ease;
+}
+.range-detail-text.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* 范围色块图例 */
+.range-legend {
+  display: flex;
+  gap: 20px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.range-legend.visible { opacity: 1; }
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+.legend-color {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* ============ 概念说明卡片 ============ */
+.concept-card {
+  width: 100%;
+  max-width: 700px;
+  margin: 20px 0;
+  animation: fadeSlideUp 0.8s ease-out 0.8s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.concept-card .glass-card {
+  padding: 28px 36px;
+}
+.concept-card h3 {
+  font-size: 1.2rem;
+  color: var(--accent-gold);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.concept-card h3 .icon {
+  font-size: 1.4rem;
+}
+.concept-card p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+/* ============ 记忆钩子 ============ */
+.memory-hook {
+  width: 100%;
+  max-width: 700px;
+  margin: 20px 0 30px;
+  animation: fadeSlideUp 0.8s ease-out 1.0s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.memory-hook .glass-card {
+  border-left: 3px solid var(--accent-gold);
+  background: linear-gradient(90deg, rgba(212, 168, 83, 0.06), transparent);
+}
+.memory-hook .hook-label {
+  font-size: 0.85rem;
+  color: var(--accent-gold);
+  font-weight: 600;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.memory-hook .hook-text {
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ============ 区域导航按钮 ============ */
+.section-nav {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  animation: fadeSlideUp 0.8s ease-out 1.2s forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 28px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+}
+.nav-btn:hover {
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.nav-btn.prev-btn:hover { border-color: var(--accent-blue); }
+.nav-btn.next-btn:hover { border-color: var(--accent-gold); }
+.nav-btn .arrow { font-size: 1.1rem; }
+
+/* ============ 动画通用 ============ */
+@keyframes fadeSlideUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ 粒子光效 ============ */
+.particle-container {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+.particle {
+  position: absolute;
+  width: 2px; height: 2px;
+  background: rgba(212, 168, 83, 0.4);
+  border-radius: 50%;
+  animation: floatUp 6s infinite linear;
+  opacity: 0;
+}
+@keyframes floatUp {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-10vh) scale(1); opacity: 0; }
+}
+
+/* ============ 选中位置指示器 ============ */
+.position-indicator {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+.position-indicator.visible { opacity: 1; }
+.indicator-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  opacity: 0.3;
+  transition: all 0.4s ease;
+}
+.indicator-dot.active {
+  background: var(--accent-gold);
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(212, 168, 83, 0.5);
+  width: 12px; height: 12px;
+}
+
+/* ============ 响应式 ============ */
+@media (max-width: 768px) {
+  .section-title h1 { font-size: 1.8rem; }
+  .section-title h2 { font-size: 1rem; }
+  .telescope-zone { gap: 24px; }
+  .scope-svg { width: 90px; height: 120px; }
+  .range-info { gap: 20px; }
+  .nav-btn { padding: 10px 18px; font-size: 0.85rem; }
+  .concept-card .glass-card, .memory-hook .glass-card { padding: 20px 24px; }
+}
+</style>
+</head>
+<body>
+
+<!-- 星空背景 -->
+<div class="stars-bg" id="starsBg"></div>
+<!-- 粒子光效 -->
+<div class="particle-container" id="particleContainer"></div>
+
+<!-- 导航栏 -->
+<nav>
+  <div class="nav-container">
+    <a class="nav-item" href="gto-theater-range.html">牌力温度计</a>
+    <a class="nav-item" href="gto-theater-balance.html">天平</a>
+    <a class="nav-item" href="gto-theater-frequency.html">频率仪表盘</a>
+    <a class="nav-item" href="gto-theater-odds.html">赔率计算器</a>
+    <a class="nav-item" href="gto-theater-gametree.html">决策树</a>
+    <a class="nav-item current" href="gto-theater-position.html">位置望远镜</a>
+    <a class="nav-item" href="gto-theater-ev.html">EV水晶球</a>
+    <a class="nav-item" href="gto-theater-exploitation.html">猎物探测器</a>
+  </div>
+</nav>
+
+<!-- 区域6：位置望远镜 -->
+<section id="position">
+  <div class="section-content">
+    
+    <!-- 标题 -->
+    <div class="section-title">
+      <h1>空中走道</h1>
+      <h2>位置望远镜 · Position</h2>
+    </div>
+    
+    <!-- 走道装饰线 -->
+    <div class="catwalk"></div>
+    
+    <!-- 望远镜展示区 -->
+    <div class="telescope-zone" id="telescopeZone">
+      <!-- UTG -->
+      <div class="telescope-stand" data-position="utg" onclick="selectPosition('utg')">
+        <svg class="scope-svg" viewBox="0 0 120 160">
+          <!-- 光晕 -->
+          <defs>
+            <radialGradient id="glow-utg" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="rgba(212,168,83,0.3)"/>
+              <stop offset="100%" stop-color="rgba(212,168,83,0)"/>
+            </radialGradient>
+          </defs>
+          <ellipse class="scope-glow" cx="60" cy="55" rx="35" ry="50" fill="url(#glow-utg)"/>
+          <!-- 镜筒外轮廓 -->
+          <rect class="scope-tube" x="40" y="20" width="40" height="70" rx="6"/>
+          <rect class="scope-tube-fill" x="40" y="20" width="40" height="70" rx="6"/>
+          <!-- 镜头 -->
+          <ellipse class="scope-lens" cx="60" cy="20" rx="18" ry="8"/>
+          <!-- 镜筒内线条 -->
+          <line class="scope-tube-inner" x1="50" y1="30" x2="50" y2="80"/>
+          <line class="scope-tube-inner" x1="70" y1="30" x2="70" y2="80"/>
+          <!-- 支架 -->
+          <line class="scope-stand" x1="60" y1="90" x2="60" y2="140"/>
+          <line class="scope-stand" x1="40" y1="140" x2="80" y2="140"/>
+          <line class="scope-stand" x1="45" y1="130" x2="75" y2="130"/>
+          <!-- 底座 -->
+          <rect class="scope-stand" x="35" y="140" width="50" height="6" rx="2"/>
+        </svg>
+        <div class="scope-label">UTG</div>
+        <div class="scope-position-desc">枪口位置</div>
+        <div class="vision-bar"><div class="vision-fill" id="vision-utg"></div></div>
+        <div class="vision-label">视野：最窄</div>
+      </div>
+      
+      <!-- CO -->
+      <div class="telescope-stand" data-position="co" onclick="selectPosition('co')">
+        <svg class="scope-svg" viewBox="0 0 120 160">
+          <defs>
+            <radialGradient id="glow-co" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="rgba(212,168,83,0.3)"/>
+              <stop offset="100%" stop-color="rgba(212,168,83,0)"/>
+            </radialGradient>
+          </defs>
+          <ellipse class="scope-glow" cx="60" cy="55" rx="35" ry="50" fill="url(#glow-co)"/>
+          <rect class="scope-tube" x="40" y="20" width="40" height="70" rx="6"/>
+          <rect class="scope-tube-fill" x="40" y="20" width="40" height="70" rx="6"/>
+          <ellipse class="scope-lens" cx="60" cy="20" rx="18" ry="8"/>
+          <line class="scope-tube-inner" x1="50" y1="30" x2="50" y2="80"/>
+          <line class="scope-tube-inner" x1="70" y1="30" x2="70" y2="80"/>
+          <line class="scope-stand" x1="60" y1="90" x2="60" y2="140"/>
+          <line class="scope-stand" x1="40" y1="140" x2="80" y2="140"/>
+          <line class="scope-stand" x1="45" y1="130" x2="75" y2="130"/>
+          <rect class="scope-stand" x="35" y="140" width="50" height="6" rx="2"/>
+        </svg>
+        <div class="scope-label">CO</div>
+        <div class="scope-position-desc">Cutoff位置</div>
+        <div class="vision-bar"><div class="vision-fill" id="vision-co"></div></div>
+        <div class="vision-label">视野：中等</div>
+      </div>
+      
+      <!-- BTN -->
+      <div class="telescope-stand" data-position="btn" onclick="selectPosition('btn')">
+        <svg class="scope-svg" viewBox="0 0 120 160">
+          <defs>
+            <radialGradient id="glow-btn" cx="0.5" cy="0.5" r="0.5">
+              <stop offset="0%" stop-color="rgba(212,168,83,0.4)"/>
+              <stop offset="100%" stop-color="rgba(212,168,83,0)"/>
+            </radialGradient>
+          </defs>
+          <ellipse class="scope-glow" cx="60" cy="55" rx="35" ry="50" fill="url(#glow-btn)"/>
+          <rect class="scope-tube" x="40" y="20" width="40" height="70" rx="6"/>
+          <rect class="scope-tube-fill" x="40" y="20" width="40" height="70" rx="6"/>
+          <ellipse class="scope-lens" cx="60" cy="20" rx="18" ry="8"/>
+          <line class="scope-tube-inner" x1="50" y1="30" x2="50" y2="80"/>
+          <line class="scope-tube-inner" x1="70" y1="30" x2="70" y2="80"/>
+          <line class="scope-stand" x1="60" y1="90" x2="60" y2="140"/>
+          <line class="scope-stand" x1="40" y1="140" x2="80" y2="140"/>
+          <line class="scope-stand" x1="45" y1="130" x2="75" y2="130"/>
+          <rect class="scope-stand" x="35" y="140" width="50" height="6" rx="2"/>
+          <!-- 按钮装饰（BTN特有） -->
+          <circle cx="60" cy="148" r="4" fill="var(--accent-gold)" opacity="0.6"/>
+        </svg>
+        <div class="scope-label">BTN</div>
+        <div class="scope-position-desc">庄家位置</div>
+        <div class="vision-bar"><div class="vision-fill" id="vision-btn"></div></div>
+        <div class="vision-label">视野：最宽</div>
+      </div>
+    </div>
+    
+    <!-- 范围扇形图展示 -->
+    <div class="range-display" id="rangeDisplay">
+      <div class="glass-card">
+        <div class="position-indicator" id="positionIndicator">
+          <div class="indicator-dot" data-indicator="utg"></div>
+          <div class="indicator-dot" data-indicator="co"></div>
+          <div class="indicator-dot" data-indicator="btn"></div>
+        </div>
+        <div id="rangeContent">
+          <div class="select-hint">
+            <span class="hint-icon">🔭</span>
+            <div>点击上方的望远镜，查看不同位置的开牌范围</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 概念说明 -->
+    <div class="concept-card">
+      <div class="glass-card">
+        <h3><span class="icon">📖</span> GTO概念：位置价值</h3>
+        <p>
+          在扑克中，位置是最重要的因素之一。行动顺序决定了你获得的信息量：
+          <strong>UTG（枪口位置）</strong>率先行动，毫无信息，只能用最紧的范围（约15%手牌）来避免被后置位置剥削；
+          <strong>CO（Cutoff）</strong>在UTG之后行动，能看到前面玩家的决策，可以用更宽的范围（约25%手牌）来攻击；
+          <strong>BTN（庄家位置）</strong>最后行动，拥有最大信息优势，可以玩最宽的范围（约40%手牌），甚至在翻牌后拥有位置优势继续施压。
+          位置越好，你可以盈利地玩的手牌越多，这就是"位置望远镜"的核心含义——位置越靠后，视野越宽广，范围越宽。
+        </p>
+      </div>
+    </div>
+    
+    <!-- 记忆钩子 -->
+    <div class="memory-hook">
+      <div class="glass-card">
+        <div class="hook-label">记忆钩子</div>
+        <div class="hook-text">
+          "每次决策前，问自己：我是这个回合最后一个行动的人吗？如果不是，收紧范围；如果是，放大视野，大胆进攻。"
+        </div>
+      </div>
+    </div>
+    
+    <!-- 区域导航 -->
+    <div class="section-nav">
+      <a href="gto-theater-gametree.html" class="nav-btn prev-btn">
+        <span class="arrow">←</span>
+        <span>上一区域：决策树</span>
+      </a>
+      <a href="gto-theater-ev.html" class="nav-btn next-btn">
+        <span>下一区域：EV水晶球</span>
+        <span class="arrow">→</span>
+      </a>
+    </div>
+    
+  </div>
+</section>
+
+<script>
+// ============ 星空生成 ============
+function createStars() {
+  const container = document.getElementById('starsBg');
+  const count = 120;
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    star.style.width = size + 'px';
+    star.style.height = size + 'px';
+    star.style.left = Math.random() * 100 + '%';
+    star.style.top = Math.random() * 100 + '%';
+    star.style.animationDelay = Math.random() * 3 + 's';
+    star.style.animationDuration = (2 + Math.random() * 3) + 's';
+    container.appendChild(star);
+  }
+}
+
+// ============ 粒子生成 ============
+function createParticles() {
+  const container = document.getElementById('particleContainer');
+  const count = 20;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 6 + 's';
+    p.style.animationDuration = (5 + Math.random() * 4) + 's';
+    container.appendChild(p);
+  }
+}
+
+// ============ 位置数据 ============
+const positionData = {
+  utg: {
+    name: 'UTG（枪口位置）',
+    rangePct: 15,
+    hands: 196,
+    totalHands: 1326,
+    color: '#c75c5c',
+    description: 'UTG是翻牌前第一个行动的位置，完全没有对手行动的信息。因此只能用最紧的范围（约15%）参与，主要包含高对子、高牌和连牌。任何边缘牌在这里都是-EV的。',
+    ranges: [
+      { name: '高对子+高牌', pct: 8, color: '#c75c5c' },
+      { name: 'Broadway连牌', pct: 4, color: '#d4a853' },
+      { name: '小对子+ suited连牌', pct: 3, color: '#5c8ac7' }
+    ]
+  },
+  co: {
+    name: 'CO（Cutoff位置）',
+    rangePct: 28,
+    hands: 371,
+    totalHands: 1326,
+    color: '#d4a853',
+    description: 'CO位置能看到UTG、UTG+1等前置玩家的行动，信息优势显著提升。可以放宽到约28%的范围，加入更多同花牌、小对子和有结构性的连牌，开始攻击前位的弱点。',
+    ranges: [
+      { name: '高对子+高牌', pct: 8, color: '#c75c5c' },
+      { name: 'Broadway+同花牌', pct: 10, color: '#d4a853' },
+      { name: '小对子+suited连牌', pct: 7, color: '#5c8ac7' },
+      { name: '弱suited牌', pct: 3, color: '#5cc78a' }
+    ]
+  },
+  btn: {
+    name: 'BTN（庄家位置）',
+    rangePct: 45,
+    hands: 596,
+    totalHands: 1326,
+    color: '#5cc78a',
+    description: 'BTN是翻牌前最后行动的位置，拥有最大信息优势。可以玩约45%的手牌范围，包括大量边缘同花牌、弱连牌甚至K-x和Q-x。在翻牌后还能持续获得位置优势，是盈利最高的位置。',
+    ranges: [
+      { name: '高对子+高牌', pct: 8, color: '#c75c5c' },
+      { name: 'Broadway+同花牌', pct: 12, color: '#d4a853' },
+      { name: '小对子+suited连牌', pct: 10, color: '#5c8ac7' },
+      { name: '弱suited+杂牌', pct: 15, color: '#5cc78a' }
+    ]
+  }
+};
+
+let currentPosition = null;
+
+// ============ 绘制扇形图 ============
+function drawFanChart(position) {
+  const data = positionData[position];
+  const canvas = document.createElement('canvas');
+  canvas.id = 'fanChartCanvas';
+  canvas.width = 380;
+  canvas.height = 260;
+  const ctx = canvas.getContext('2d');
+  
+  const cx = 190;
+  const cy = 220;
+  const radius = 160;
+  
+  // 背景半圆
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, Math.PI, 0);
+  ctx.lineTo(cx, cy);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+  
+  // 绘制范围扇形
+  let startAngle = Math.PI;
+  const totalAngle = Math.PI;
+  
+  data.ranges.forEach(range => {
+    const angle = (range.pct / 100) * totalAngle;
+    
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, startAngle, startAngle + angle);
+    ctx.closePath();
+    ctx.fillStyle = range.color + '55';
+    ctx.fill();
+    ctx.strokeStyle = range.color;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // 扇形标签
+    const midAngle = startAngle + angle / 2;
+    const labelR = radius * 0.65;
+    const lx = cx + Math.cos(midAngle) * labelR;
+    const ly = cy + Math.sin(midAngle) * labelR;
+    
+    ctx.fillStyle = range.color;
+    ctx.font = 'bold 13px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(range.pct + '%', lx, ly);
+    
+    startAngle += angle;
+  });
+  
+  // 中心文字
+  ctx.fillStyle = '#f0e6d3';
+  ctx.font = 'bold 28px "Segoe UI", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(data.rangePct + '%', cx, cy - 10);
+  ctx.fillStyle = '#b8a99a';
+  ctx.font = '12px "Segoe UI", sans-serif';
+  ctx.fillText('开牌范围', cx, cy + 14);
+  
+  // 总手牌数
+  ctx.fillStyle = 'rgba(184,169,154,0.6)';
+  ctx.font = '11px "Segoe UI", sans-serif';
+  ctx.fillText(`${data.hands} / ${data.totalHands} 手牌`, cx, cy + 32);
+  
+  return canvas;
+}
+
+// ============ 选择位置 ============
+function selectPosition(position) {
+  if (currentPosition === position) return;
+  currentPosition = position;
+  const data = positionData[position];
+  
+  // 更新望远镜选中态
+  document.querySelectorAll('.telescope-stand').forEach(el => {
+    el.classList.remove('active');
+  });
+  document.querySelector('.telescope-stand[data-position="' + position + '"]').classList.add('active');
+  
+  // 更新指示器
+  document.querySelectorAll('.indicator-dot').forEach(dot => {
+    dot.classList.toggle('active', dot.dataset.indicator === position);
+  });
+  document.getElementById('positionIndicator').classList.add('visible');
+  
+  // 填充视野条
+  document.querySelectorAll('.vision-fill').forEach(bar => {
+    bar.style.width = '0%';
+  });
+  setTimeout(() => {
+    document.getElementById('vision-utg').style.width = '15%';
+    document.getElementById('vision-co').style.width = '28%';
+    document.getElementById('vision-btn').style.width = '45%';
+  }, 100);
+  
+  // 构建范围展示内容
+  const rangeContent = document.getElementById('rangeContent');
+  rangeContent.innerHTML = '';
+  
+  // 标题
+  const titleDiv = document.createElement('div');
+  titleDiv.style.cssText = 'text-align:center; margin-bottom:10px;';
+  titleDiv.innerHTML = `<div style="font-size:1.3rem;font-weight:600;color:${data.color};margin-bottom:4px;">${data.name}</div>`;
+  rangeContent.appendChild(titleDiv);
+  
+  // 扇形图
+  rangeContent.appendChild(drawFanChart(position));
+  
+  // 统计数字
+  const infoDiv = document.createElement('div');
+  infoDiv.className = 'range-info';
+  infoDiv.innerHTML = `
+    <div class="range-stat">
+      <div class="stat-value">${data.rangePct}%</div>
+      <div class="stat-label">开牌范围</div>
+    </div>
+    <div class="range-stat">
+      <div class="stat-value">${data.hands}</div>
+      <div class="stat-label">可玩手牌</div>
+    </div>
+    <div class="range-stat">
+      <div class="stat-value">${(data.hands / data.totalHands * 100).toFixed(1)}%</div>
+      <div class="stat-label">全部手牌占比</div>
+    </div>
+  `;
+  rangeContent.appendChild(infoDiv);
+  
+  // 图例
+  const legendDiv = document.createElement('div');
+  legendDiv.className = 'range-legend';
+  data.ranges.forEach(r => {
+    legendDiv.innerHTML += `
+      <div class="legend-item">
+        <div class="legend-color" style="background:${r.color}"></div>
+        <span>${r.name} (${r.pct}%)</span>
+      </div>
+    `;
+  });
+  rangeContent.appendChild(legendDiv);
+  requestAnimationFrame(() => legendDiv.classList.add('visible'));
+  
+  // 描述文字
+  const descDiv = document.createElement('div');
+  descDiv.className = 'range-detail-text';
+  descDiv.textContent = data.description;
+  rangeContent.appendChild(descDiv);
+  requestAnimationFrame(() => descDiv.classList.add('visible'));
+  
+  // 动画触发：数字计数
+  document.querySelectorAll('.stat-value').forEach(el => {
+    const target = parseInt(el.textContent);
+    let current = 0;
+    const step = Math.max(1, Math.floor(target / 20));
+    const timer = setInterval(() => {
+      current += step;
+      if (current >= target) {
+        current = target;
+        clearInterval(timer);
+      }
+      el.textContent = current + (el.textContent.includes('%') ? '%' : '');
+    }, 25);
+  });
+}
+
+// ============ 初始化 ============
+document.addEventListener('DOMContentLoaded', () => {
+  createStars();
+  createParticles();
+  
+  // 默认不选中任何位置，等待用户点击
+  // 可选：自动选中BTN作为默认展示
+  // selectPosition('btn');
+});
+</script>
+</body>
+</html>
