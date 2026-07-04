@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区域5：后台走廊——游戏树迷宫 | GTO扑克大剧院</title>
+<style>
+/* ========== 全局样式 ========== */
+:root {
+  --bg-dark: #0d0d14;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --text-primary: #f0e6d3;
+  --text-secondary: #b8a99a;
+  --accent-gold: #d4a853;
+  --accent-red: #c75c5c;
+  --accent-green: #5cc78a;
+  --accent-blue: #5c8ac7;
+  --accent-orange: #c7a35c;
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ========== 导航栏 ========== */
+.nav-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 1000;
+  background: rgba(13, 13, 20, 0.92);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 0;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nav-item {
+  color: var(--text-secondary);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  transition: all 0.3s ease;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.nav-item:hover {
+  color: var(--text-primary);
+  background: var(--glass);
+  border-color: var(--glass-border);
+}
+.nav-item.active {
+  color: var(--accent-gold);
+  background: rgba(212, 168, 83, 0.12);
+  border-color: rgba(212, 168, 83, 0.3);
+  font-weight: 600;
+}
+
+/* ========== 区域容器 ========== */
+.section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 背景装饰 */
+.bg-grid {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-image:
+    linear-gradient(rgba(212, 168, 83, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 168, 83, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none;
+}
+.bg-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(212, 168, 83, 0.06) 0%, transparent 70%);
+  top: 20%; left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: pulseGlow 6s ease-in-out infinite;
+}
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 1; transform: translate(-50%, -50%) scale(1.15); }
+}
+
+/* ========== 玻璃卡片 ========== */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 30px;
+}
+
+/* ========== 标题区域 ========== */
+.hero-title {
+  font-size: 52px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  text-align: center;
+  letter-spacing: 2px;
+  text-shadow: 0 0 30px rgba(212, 168, 83, 0.3);
+  animation: fadeInDown 1s ease-out;
+}
+.hero-subtitle {
+  font-size: 22px;
+  color: var(--accent-gold);
+  margin-bottom: 40px;
+  text-align: center;
+  font-weight: 500;
+  letter-spacing: 4px;
+  animation: fadeInDown 1s ease-out 0.2s both;
+}
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 游戏树迷宫容器 ========== */
+.game-tree-container {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  position: relative;
+  animation: fadeInUp 1s ease-out 0.4s both;
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========== 街道节点 ========== */
+.street-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 30px 0;
+}
+
+.street-label {
+  font-size: 14px;
+  color: var(--accent-gold);
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.street-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 24px 36px;
+  text-align: center;
+  min-width: 280px;
+  position: relative;
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+.street-card:hover {
+  border-color: rgba(212, 168, 83, 0.4);
+  box-shadow: 0 0 30px rgba(212, 168, 83, 0.1);
+  transform: translateY(-3px);
+}
+.street-card.active {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 40px rgba(212, 168, 83, 0.15);
+  background: rgba(212, 168, 83, 0.08);
+}
+.street-card.locked {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.street-card .card-icon {
+  font-size: 42px;
+  margin-bottom: 8px;
+}
+.street-card .card-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+.street-card .card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* 连接线条 */
+.connector-line {
+  width: 2px;
+  height: 50px;
+  background: linear-gradient(to bottom, var(--accent-gold), transparent);
+  position: relative;
+}
+.connector-line::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  box-shadow: 0 0 10px var(--accent-gold);
+}
+
+/* 分叉线 */
+.branch-lines {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
+  max-width: 800px;
+  position: relative;
+  height: 60px;
+}
+.branch-line {
+  flex: 1;
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+.branch-line::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(to bottom, transparent, var(--accent-gold) 60%);
+  transform: translateX(-50%);
+}
+.branch-line.left::before { transform: translateX(-50%) rotate(15deg); transform-origin: top; }
+.branch-line.right::before { transform: translateX(-50%) rotate(-15deg); transform-origin: top; }
+.branch-line.center::before { transform: translateX(-50%); }
+
+/* ========== 选择按钮区域 ========== */
+.choices-panel {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  max-width: 600px;
+}
+
+.choice-btn {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 14px 24px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+  justify-content: center;
+}
+.choice-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--accent-gold);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(212, 168, 83, 0.15);
+}
+.choice-btn.selected {
+  background: rgba(212, 168, 83, 0.2);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.2);
+}
+.choice-btn .btn-icon {
+  font-size: 18px;
+}
+
+/* 行动类型颜色 */
+.choice-btn.action-check { border-left: 3px solid var(--accent-green); }
+.choice-btn.action-bet { border-left: 3px solid var(--accent-blue); }
+.choice-btn.action-raise { border-left: 3px solid var(--accent-red); }
+.choice-btn.action-fold { border-left: 3px solid var(--text-secondary); }
+.choice-btn.action-call { border-left: 3px solid var(--accent-orange); }
+
+/* ========== 决策路径展示 ========== */
+.path-display {
+  margin-top: 30px;
+  padding: 20px 30px;
+  background: rgba(13, 13, 20, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  animation: fadeInUp 0.6s ease-out;
+}
+.path-display.hidden {
+  display: none;
+}
+.path-title {
+  font-size: 13px;
+  color: var(--accent-gold);
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+.path-flow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.path-step {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.path-step .step-icon { font-size: 16px; }
+.path-arrow {
+  color: var(--accent-gold);
+  font-size: 18px;
+  animation: arrowPulse 1.5s ease-in-out infinite;
+}
+@keyframes arrowPulse {
+  0%, 100% { opacity: 0.5; transform: translateX(0); }
+  50% { opacity: 1; transform: translateX(3px); }
+}
+
+/* 路径结果 */
+.path-result {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(92, 200, 138, 0.08);
+  border: 1px solid rgba(92, 200, 138, 0.2);
+  border-radius: 12px;
+  text-align: center;
+}
+.path-result .result-label {
+  font-size: 12px;
+  color: var(--accent-green);
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.path-result .result-text {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ========== 概念解释 ========== */
+.concept-panel {
+  max-width: 700px;
+  width: 100%;
+  margin-top: 30px;
+  animation: fadeInUp 1s ease-out 0.6s both;
+}
+.concept-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-gold);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.concept-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--text-secondary);
+  text-align: justify;
+}
+
+/* ========== 记忆钩子 ========== */
+.memory-hook {
+  max-width: 700px;
+  width: 100%;
+  margin-top: 24px;
+  padding: 20px 24px;
+  background: rgba(212, 168, 83, 0.06);
+  border: 1px solid rgba(212, 168, 83, 0.2);
+  border-radius: 16px;
+  border-left: 4px solid var(--accent-gold);
+  animation: fadeInUp 1s ease-out 0.8s both;
+}
+.memory-hook .hook-label {
+  font-size: 13px;
+  color: var(--accent-gold);
+  font-weight: 700;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.memory-hook .hook-text {
+  font-size: 15px;
+  color: var(--text-primary);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ========== 重置按钮 ========== */
+.reset-btn {
+  margin-top: 20px;
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  padding: 10px 24px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.reset-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+  background: rgba(212, 168, 83, 0.08);
+}
+
+/* ========== 区域导航按钮 ========== */
+.section-nav {
+  display: flex;
+  gap: 20px;
+  margin-top: 40px;
+  animation: fadeInUp 1s ease-out 1s both;
+}
+.section-nav a {
+  text-decoration: none;
+  padding: 14px 32px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-prev {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+.nav-prev:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+.nav-next {
+  background: rgba(212, 168, 83, 0.15);
+  border: 1px solid rgba(212, 168, 83, 0.3);
+  color: var(--accent-gold);
+}
+.nav-next:hover {
+  background: rgba(212, 168, 83, 0.25);
+  box-shadow: 0 0 20px rgba(212, 168, 83, 0.15);
+}
+
+/* ========== 粒子背景 ========== */
+.particles {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.particle {
+  position: absolute;
+  width: 4px; height: 4px;
+  background: var(--accent-gold);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: floatParticle linear infinite;
+}
+@keyframes floatParticle {
+  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+}
+
+/* ========== 响应式 ========== */
+@media (max-width: 768px) {
+  .hero-title { font-size: 36px; }
+  .hero-subtitle { font-size: 16px; }
+  .street-card { min-width: 220px; padding: 18px 24px; }
+  .choices-panel { gap: 8px; }
+  .choice-btn { padding: 10px 16px; min-width: 100px; font-size: 13px; }
+  .nav-bar { gap: 4px; padding: 8px; }
+  .nav-item { padding: 4px 10px; font-size: 11px; }
+  .section-nav { flex-direction: column; gap: 10px; }
+  .section-nav a { justify-content: center; }
+}
+
+/* ========== 过渡动画 ========== */
+.fade-in { animation: fadeIn 0.5s ease-out; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.expand-in { animation: expandIn 0.4s ease-out; }
+@keyframes expandIn {
+  from { opacity: 0; transform: scaleY(0.8) translateY(-10px); }
+  to { opacity: 1; transform: scaleY(1) translateY(0); }
+}
+
+/* 锁定提示 */
+.lock-hint {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  opacity: 0.7;
+}
+
+/* GTO概率标签 */
+.gto-tag {
+  display: inline-block;
+  background: rgba(92, 138, 199, 0.15);
+  border: 1px solid rgba(92, 138, 199, 0.3);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--accent-blue);
+  margin-left: 6px;
+  font-weight: 600;
+}
+
+/* 隐藏元素 */
+.hidden { display: none !important; }
+
+/* 展开区域 */
+.expand-area {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  transition: all 0.5s ease;
+}
+
+/* 小标签 */
+.mini-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(212, 168, 83, 0.1);
+  border: 1px solid rgba(212, 168, 83, 0.2);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: var(--accent-gold);
+  margin-bottom: 16px;
+}
+</style>
+</head>
+<body>
+
+<!-- 导航栏 -->
+<nav class="nav-bar">
+  <a class="nav-item" href="gto-theater-range.html">范围剧场</a>
+  <a class="nav-item" href="gto-theater-balance.html">平衡天秤</a>
+  <a class="nav-item" href="gto-theater-frequency.html">频率轮盘</a>
+  <a class="nav-item" href="gto-theater-odds.html">赔率密室</a>
+  <a class="nav-item active" href="gto-theater-gametree.html">游戏树迷宫</a>
+  <a class="nav-item" href="gto-theater-position.html">位置阶梯</a>
+  <a class="nav-item" href="gto-theater-ev.html">EV大厅</a>
+  <a class="nav-item" href="gto-theater-exploitation.html">剥削审讯室</a>
+</nav>
+
+<!-- 区域5：游戏树迷宫 -->
+<section class="section" id="gametree">
+  <!-- 背景装饰 -->
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+  <div class="particles" id="particles"></div>
+
+  <!-- 标题 -->
+  <h1 class="hero-title">🌳 后台走廊</h1>
+  <p class="hero-subtitle">游戏树迷宫 · GAME TREE</p>
+
+  <!-- 游戏树迷宫主体 -->
+  <div class="game-tree-container">
+
+    <!-- 起点：翻前 -->
+    <div class="street-node" id="node-preflop">
+      <div class="mini-badge">🎬 决策起点</div>
+      <div class="street-card active" data-street="preflop">
+        <div class="card-icon">🃏</div>
+        <div class="card-title">翻前 Preflop</div>
+        <div class="card-desc">你手中有两张底牌，轮到你行动</div>
+      </div>
+      <div class="choices-panel" id="choices-preflop">
+        <button class="choice-btn action-fold" data-action="fold" data-street="preflop">
+          <span class="btn-icon">🚪</span> 弃牌
+        </button>
+        <button class="choice-btn action-call" data-action="call" data-street="preflop">
+          <span class="btn-icon">✓</span> 跟注
+        </button>
+        <button class="choice-btn action-raise" data-action="raise" data-street="preflop">
+          <span class="btn-icon">🔥</span> 加注
+        </button>
+      </div>
+    </div>
+
+    <!-- 连接线到翻牌 -->
+    <div class="connector-line" id="line-preflop-flop"></div>
+
+    <!-- 翻牌 -->
+    <div class="street-node" id="node-flop">
+      <div class="street-label">第一路口</div>
+      <div class="street-card locked" data-street="flop" id="card-flop">
+        <div class="card-icon">🎴</div>
+        <div class="card-title">翻牌 Flop</div>
+        <div class="card-desc">三张公共牌已发出，形势逐渐明朗</div>
+        <div class="lock-hint" id="hint-flop">👆 先完成翻前决策以解锁</div>
+      </div>
+      <div class="choices-panel hidden" id="choices-flop">
+        <button class="choice-btn action-check" data-action="check" data-street="flop">
+          <span class="btn-icon">👋</span> 过牌
+        </button>
+        <button class="choice-btn action-bet" data-action="bet" data-street="flop">
+          <span class="btn-icon">💰</span> 下注 75%
+          <span class="gto-tag">GTO 75%</span>
+        </button>
+        <button class="choice-btn action-raise" data-action="raise" data-street="flop">
+          <span class="btn-icon">⚡</span> 加注
+        </button>
+      </div>
+    </div>
+
+    <!-- 连接线到转牌 -->
+    <div class="connector-line" id="line-flop-turn"></div>
+
+    <!-- 转牌 -->
+    <div class="street-node" id="node-turn">
+      <div class="street-label">第二路口</div>
+      <div class="street-card locked" data-street="turn" id="card-turn">
+        <div class="card-icon">🃑</div>
+        <div class="card-title">转牌 Turn</div>
+        <div class="card-desc">第四张公共牌，牌力可能剧变</div>
+        <div class="lock-hint" id="hint-turn">👆 先完成翻牌决策以解锁</div>
+      </div>
+      <div class="choices-panel hidden" id="choices-turn">
+        <button class="choice-btn action-check" data-action="check" data-street="turn">
+          <span class="btn-icon">👋</span> 过牌
+        </button>
+        <button class="choice-btn action-bet" data-action="bet" data-street="turn">
+          <span class="btn-icon">💰</span> 下注 66%
+          <span class="gto-tag">GTO 66%</span>
+        </button>
+        <button class="choice-btn action-raise" data-action="raise" data-street="turn">
+          <span class="btn-icon">⚡</span> 加注
+        </button>
+      </div>
+    </div>
+
+    <!-- 连接线到河牌 -->
+    <div class="connector-line" id="line-turn-river"></div>
+
+    <!-- 河牌 -->
+    <div class="street-node" id="node-river">
+      <div class="street-label">第三路口</div>
+      <div class="street-card locked" data-street="river" id="card-river">
+        <div class="card-icon">🃙</div>
+        <div class="card-title">河牌 River</div>
+        <div class="card-desc">最后一张公共牌，终局对决</div>
+        <div class="lock-hint" id="hint-river">👆 先完成转牌决策以解锁</div>
+      </div>
+      <div class="choices-panel hidden" id="choices-river">
+        <button class="choice-btn action-check" data-action="check" data-street="river">
+          <span class="btn-icon">👋</span> 过牌
+        </button>
+        <button class="choice-btn action-bet" data-action="bet" data-street="river">
+          <span class="btn-icon">💰</span> 下注 50%
+          <span class="gto-tag">GTO 50%</span>
+        </button>
+        <button class="choice-btn action-fold" data-action="fold" data-street="river">
+          <span class="btn-icon">🚪</span> 弃牌
+        </button>
+      </div>
+    </div>
+
+    <!-- 决策路径展示 -->
+    <div class="path-display hidden" id="path-display">
+      <div class="path-title">🛤️ 你的决策路径</div>
+      <div class="path-flow" id="path-flow"></div>
+      <div class="path-result" id="path-result">
+        <div class="result-label">GTO 分析</div>
+        <div class="result-text" id="result-text">选择你的行动，构建完整决策链...</div>
+      </div>
+    </div>
+
+    <!-- 重置按钮 -->
+    <button class="reset-btn hidden" id="reset-btn" onclick="resetTree()">
+      <span>🔄</span> 重置决策树
+    </button>
+
+  </div>
+
+  <!-- 概念解释 -->
+  <div class="concept-panel glass-card">
+    <div class="concept-title">
+      <span>📚</span> GTO 概念：游戏树（Game Tree）
+    </div>
+    <p class="concept-text">
+      游戏树是GTO策略的核心数据结构，它将德州扑克的所有可能决策路径可视化为一个树状图。从翻前到河牌，每个决策点（节点）都代表一个信息集——玩家知道公共牌和自己的底牌，但不知道对手的具体手牌。GTO策略要求在每个节点上，以特定的频率选择不同的行动，使得对手无法通过改变策略来获得额外收益。理解游戏树意味着理解：每一个决策都不是孤立的，而是整个策略蓝图的一部分。
+    </p>
+  </div>
+
+  <!-- 记忆钩子 -->
+  <div class="memory-hook">
+    <div class="hook-label">
+      <span>🎣</span> 记忆钩子
+    </div>
+    <div class="hook-text">
+      "每次决策前，问自己：如果我总是这样做，对手能否 exploit 我？GTO 不是选择最强的行动，而是选择让对手最难受的行动组合。"
+    </div>
+  </div>
+
+  <!-- 区域导航 -->
+  <div class="section-nav">
+    <a class="nav-prev" href="gto-theater-odds.html">
+      <span>←</span> 上一区域：赔率密室
+    </a>
+    <a class="nav-next" href="gto-theater-position.html">
+      下一区域：位置阶梯 <span>→</span>
+    </a>
+  </div>
+
+</section>
+
+<script>
+// ========== 决策树状态 ==========
+const gameState = {
+  preflop: null,
+  flop: null,
+  turn: null,
+  river: null
+};
+
+const streetOrder = ['preflop', 'flop', 'turn', 'river'];
+
+const streetNames = {
+  preflop: '翻前',
+  flop: '翻牌',
+  turn: '转牌',
+  river: '河牌'
+};
+
+const actionNames = {
+  fold: '弃牌',
+  check: '过牌',
+  call: '跟注',
+  bet: '下注',
+  raise: '加注'
+};
+
+const actionIcons = {
+  fold: '🚪',
+  check: '👋',
+  call: '✓',
+  bet: '💰',
+  raise: '⚡'
+};
+
+const gtoAnalysis = {
+  preflop: {
+    fold: '在不利位置面对加注，弃掉边缘牌是GTO的基础策略。避免在翻后陷入困难局面。',
+    call: '跟注保持范围多样性，为后续街道保留诈唬和价值牌的平衡。',
+    raise: '加注构建底池， polarization 你的范围——要么极强，要么纯诈唬。'
+  },
+  flop: {
+    check: '过牌给对手攻击机会，在潮湿牌面上控制底池，保护你的中等强度牌。',
+    bet: '75%底池下注是GTO标准尺寸，给对手2.33:1的赔率，迫使他防守足够宽的范围。',
+    raise: '翻牌圈加注代表极强牌力或强听牌，需确保你的范围有适当平衡。'
+  },
+  turn: {
+    check: '转牌圈过牌可以诱捕或控制底池，特别是在牌面变得危险时。',
+    bet: '66%底池是GTO经典尺寸，在转牌圈继续施压，保持频率与尺寸的匹配。',
+    raise: '转牌圈加注通常是极化范围——坚果牌或强听牌，需谨慎使用。'
+  },
+  river: {
+    check: '河牌圈过牌可能诱导诈唬，或在你不确定牌力时避免价值损失。',
+    bet: '50%底池在河牌圈是标准价值下注尺寸，确保对手跟注范围有利可图。',
+    fold: '面对河牌圈重注，如果你只有抓诈唬牌，弃牌是正确的GTO决策。'
+  }
+};
+
+// ========== 初始化粒子背景 ==========
+function initParticles() {
+  const container = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDuration = (8 + Math.random() * 12) + 's';
+    p.style.animationDelay = Math.random() * 8 + 's';
+    p.style.width = p.style.height = (2 + Math.random() * 4) + 'px';
+    container.appendChild(p);
+  }
+}
+
+// ========== 处理选择 ==========
+function handleChoice(street, action) {
+  // 保存选择
+  gameState[street] = action;
+
+  // 更新UI
+  updateChoiceButtons(street, action);
+  updateStreetCard(street, action);
+  unlockNextStreet(street);
+  updatePathDisplay();
+
+  // 如果完成了所有选择，显示最终结果
+  if (street === 'river') {
+    showFinalResult();
+  }
+}
+
+// 更新按钮选中状态
+function updateChoiceButtons(street, selectedAction) {
+  const panel = document.getElementById('choices-' + street);
+  const buttons = panel.querySelectorAll('.choice-btn');
+  buttons.forEach(btn => {
+    if (btn.dataset.action === selectedAction) {
+      btn.classList.add('selected');
+    } else {
+      btn.classList.remove('selected');
+    }
+  });
+}
+
+// 更新街道卡片状态
+function updateStreetCard(street, action) {
+  const card = document.getElementById('card-' + street);
+  const titleEl = card.querySelector('.card-title');
+  titleEl.innerHTML = `${streetNames[street]} · ${actionNames[action]}`;
+  card.classList.add('active');
+}
+
+// 解锁下一个街道
+function unlockNextStreet(currentStreet) {
+  const currentIndex = streetOrder.indexOf(currentStreet);
+  if (currentIndex < streetOrder.length - 1) {
+    const nextStreet = streetOrder[currentIndex + 1];
+    const nextCard = document.getElementById('card-' + nextStreet);
+    const nextChoices = document.getElementById('choices-' + nextStreet);
+    const nextHint = document.getElementById('hint-' + nextStreet);
+    const nextLine = document.getElementById('line-' + currentStreet + '-' + nextStreet);
+
+    // 移除锁定状态
+    nextCard.classList.remove('locked');
+    nextCard.classList.add('active');
+    nextChoices.classList.remove('hidden');
+    nextChoices.classList.add('expand-in');
+    if (nextHint) nextHint.classList.add('hidden');
+    if (nextLine) {
+      nextLine.style.background = 'linear-gradient(to bottom, var(--accent-gold), var(--accent-gold))';
+    }
+
+    // 添加发光效果
+    nextCard.style.animation = 'pulseGlow 2s ease-in-out';
+  }
+}
+
+// 更新路径展示
+function updatePathDisplay() {
+  const display = document.getElementById('path-display');
+  const flow = document.getElementById('path-flow');
+  const resultText = document.getElementById('result-text');
+
+  display.classList.remove('hidden');
+  display.classList.add('fade-in');
+
+  // 构建路径HTML
+  let html = '';
+  let hasSelection = false;
+  let lastAnalysis = '';
+
+  for (const street of streetOrder) {
+    if (gameState[street]) {
+      hasSelection = true;
+      const action = gameState[street];
+      html += `
+        <div class="path-step">
+          <span class="step-icon">${actionIcons[action]}</span>
+          <span>${streetNames[street]}${actionNames[action]}</span>
+        </div>
+      `;
+      if (street !== 'river') {
+        html += '<span class="path-arrow">→</span>';
+      }
+      lastAnalysis = gtoAnalysis[street][action];
+    }
+  }
+
+  flow.innerHTML = html;
+  if (hasSelection) {
+    resultText.textContent = lastAnalysis;
+  }
+
+  // 显示重置按钮
+  document.getElementById('reset-btn').classList.remove('hidden');
+}
+
+// 显示最终结果
+function showFinalResult() {
+  const resultText = document.getElementById('result-text');
+  const allActions = streetOrder.map(s => gameState[s]);
+
+  let summary = '';
+  if (allActions.includes('fold')) {
+    const foldIndex = allActions.indexOf('fold');
+    const foldStreet = streetOrder[foldIndex];
+    summary = `你在${streetNames[foldStreet]}选择了弃牌，避免了进一步的损失。在GTO中，知道何时放弃是同样重要的技能。`;
+  } else if (allActions[3] === 'check') {
+    summary = '你在河牌选择了过牌，可能是诱导诈唬或控制底池。GTO要求你在过牌时仍有足够的价值牌来平衡。';
+  } else if (allActions[3] === 'bet') {
+    summary = '你在河牌持续下注，这是GTO的价值策略。关键在于你的下注范围是否包含适当的诈唬牌来保持平衡。';
+  } else {
+    summary = '你完成了一条完整的决策路径。记住：GTO不是每一手牌都赢，而是长期期望收益最大化。';
+  }
+
+  resultText.textContent = summary;
+  resultText.style.animation = 'fadeIn 1s ease-out';
+}
+
+// ========== 重置决策树 ==========
+function resetTree() {
+  // 重置状态
+  for (const street of streetOrder) {
+    gameState[street] = null;
+  }
+
+  // 重置UI
+  for (const street of streetOrder) {
+    const card = document.getElementById('card-' + street);
+    const choices = document.getElementById('choices-' + street);
+    const hint = document.getElementById('hint-' + street);
+    const titleEl = card.querySelector('.card-title');
+
+    // 恢复标题
+    titleEl.innerHTML = street === 'preflop' ? '翻前 Preflop' :
+                        street === 'flop' ? '翻牌 Flop' :
+                        street === 'turn' ? '转牌 Turn' : '河牌 River';
+
+    // 移除选中状态
+    card.classList.remove('active');
+    if (street !== 'preflop') {
+      card.classList.add('locked');
+    }
+
+    // 隐藏选择面板
+    if (street !== 'preflop') {
+      choices.classList.add('hidden');
+    } else {
+      // 重置翻前按钮
+      const buttons = choices.querySelectorAll('.choice-btn');
+      buttons.forEach(btn => btn.classList.remove('selected'));
+    }
+
+    if (hint) hint.classList.remove('hidden');
+  }
+
+  // 重置连接线
+  document.getElementById('line-preflop-flop').style.background = '';
+  document.getElementById('line-flop-turn').style.background = '';
+  document.getElementById('line-turn-river').style.background = '';
+
+  // 隐藏路径和重置按钮
+  document.getElementById('path-display').classList.add('hidden');
+  document.getElementById('reset-btn').classList.add('hidden');
+
+  // 恢复翻前卡片为active
+  document.getElementById('card-preflop').classList.add('active');
+}
+
+// ========== 绑定事件 ==========
+document.addEventListener('DOMContentLoaded', function() {
+  initParticles();
+
+  // 绑定所有选择按钮
+  const choiceButtons = document.querySelectorAll('.choice-btn');
+  choiceButtons.forEach(btn => {
+    btn.addEventListener('click', function() {
+      const street = this.dataset.street;
+      const action = this.dataset.action;
+
+      // 检查是否已锁定
+      const card = document.getElementById('card-' + street);
+      if (card.classList.contains('locked')) return;
+
+      handleChoice(street, action);
+    });
+  });
+});
+
+// ========== 平滑滚动 ==========
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
