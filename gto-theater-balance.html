@@ -1,1 +1,830 @@
-Inm[Inserting content]...
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTO扑克大剧院 - 价值/诈唬天平</title>
+    <style>
+        :root {
+            --bg-dark: #0d0d14;
+            --bg-card: rgba(255, 255, 255, 0.05);
+            --text-primary: #f0e6d3;
+            --text-secondary: #b8a99a;
+            --accent-gold: #d4a853;
+            --accent-red: #c75c5c;
+            --accent-green: #5cc78a;
+            --accent-blue: #5c8ac7;
+            --accent-orange: #c7a35c;
+            --glass: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* 导航栏 */
+        .nav-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            background: rgba(13, 13, 20, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 0;
+        }
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 20px;
+            flex-wrap: wrap;
+        }
+        .nav-item {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+            white-space: nowrap;
+        }
+        .nav-item:hover {
+            color: var(--text-primary);
+            background: var(--glass);
+            border-color: var(--glass-border);
+        }
+        .nav-item.active {
+            color: var(--accent-gold);
+            background: rgba(212, 168, 83, 0.15);
+            border-color: rgba(212, 168, 83, 0.4);
+            font-weight: 600;
+        }
+
+        /* 区域样式 */
+        section {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 100px 20px 40px;
+            position: relative;
+        }
+
+        /* 背景粒子效果 */
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 8s infinite ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+            50% { transform: translateY(-60px) translateX(20px); opacity: 0.6; }
+        }
+
+        /* 玻璃卡片 */
+        .glass-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        /* 区域标题 */
+        .section-title {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+            text-align: center;
+            text-shadow: 0 0 30px rgba(212, 168, 83, 0.3);
+        }
+        .section-subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+
+        /* 主内容区 */
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+            max-width: 1200px;
+            width: 100%;
+            z-index: 1;
+        }
+
+        /* 天平容器 */
+        .balance-scale-container {
+            position: relative;
+            width: 100%;
+            max-width: 700px;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        /* 天平底座 */
+        .scale-base {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 20px;
+            background: linear-gradient(90deg, #8b7355, #d4a853, #8b7355);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(212, 168, 83, 0.4);
+        }
+        .scale-pillar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 100px;
+            background: linear-gradient(90deg, #8b7355, #d4a853, #8b7355);
+            border-radius: 6px;
+        }
+        .scale-pillar-top {
+            position: absolute;
+            bottom: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #d4a853, #8b7355);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(212, 168, 83, 0.5);
+            z-index: 10;
+        }
+
+        /* 天平横梁 */
+        .scale-beam {
+            position: absolute;
+            bottom: 130px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 500px;
+            height: 8px;
+            background: linear-gradient(90deg, #8b7355, #d4a853, #8b7355);
+            border-radius: 4px;
+            transform-origin: center center;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 5;
+        }
+        .scale-beam::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background: radial-gradient(circle, #d4a853, #8b7355);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(212, 168, 83, 0.6);
+        }
+
+        /* 托盘 */
+        .scale-pan {
+            position: absolute;
+            top: 8px;
+            width: 100px;
+            height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .scale-pan-left {
+            left: 0;
+            transform-origin: top center;
+            transform: translateX(-50%) rotate(0deg);
+        }
+        .scale-pan-right {
+            right: 0;
+            transform-origin: top center;
+            transform: translateX(50%) rotate(0deg);
+        }
+        .pan-chain {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, #d4a853, #8b7355);
+            position: relative;
+        }
+        .pan-chain::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            border: 2px solid #d4a853;
+            border-radius: 50%;
+            background: transparent;
+        }
+        .pan-dish {
+            width: 100px;
+            height: 20px;
+            background: linear-gradient(180deg, rgba(212, 168, 83, 0.3), rgba(212, 168, 83, 0.1));
+            border: 2px solid rgba(212, 168, 83, 0.6);
+            border-radius: 0 0 50px 50px;
+            backdrop-filter: blur(4px);
+            position: relative;
+            overflow: visible;
+        }
+        .pan-label {
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 600;
+            white-space: nowrap;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .pan-label-left { color: var(--accent-green); }
+        .pan-label-right { color: var(--accent-red); }
+
+        /* 扑克筹码 */
+        .chips-stack {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            gap: 2px;
+        }
+        .chip {
+            width: 50px;
+            height: 10px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.3);
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .chip::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 2px;
+            background: rgba(255,255,255,0.4);
+        }
+        .chip-green { background: linear-gradient(90deg, #2d8a5a, #5cc78a, #2d8a5a); }
+        .chip-red { background: linear-gradient(90deg, #8a3a3a, #c75c5c, #8a3a3a); }
+
+        /* 比例显示 */
+        .ratio-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .ratio-box {
+            text-align: center;
+            padding: 20px 30px;
+            min-width: 140px;
+        }
+        .ratio-value {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .ratio-value.value { color: var(--accent-green); }
+        .ratio-value.bluff { color: var(--accent-red); }
+        .ratio-label {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+        .ratio-divider {
+            font-size: 28px;
+            color: var(--accent-gold);
+            font-weight: 300;
+        }
+
+        /* 滑动条 */
+        .slider-container {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        .slider-label {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+        .slider-wrapper {
+            position: relative;
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+        }
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, var(--accent-green) 50%, var(--accent-red) 50%);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            border: 3px solid #fff;
+            box-shadow: 0 0 15px rgba(212, 168, 83, 0.6);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--accent-gold);
+            border: 3px solid #fff;
+            box-shadow: 0 0 15px rgba(212, 168, 83, 0.6);
+            cursor: pointer;
+        }
+        .slider-marks {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* 信息卡片 */
+        .info-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+        }
+        .info-card {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .info-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-color: rgba(212, 168, 83, 0.3);
+        }
+        .info-card h3 {
+            font-size: 18px;
+            color: var(--accent-gold);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-card p {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--text-secondary);
+        }
+        .info-card .highlight {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+        .info-card .memory-hook {
+            margin-top: 15px;
+            padding: 12px 16px;
+            background: rgba(212, 168, 83, 0.1);
+            border-left: 3px solid var(--accent-gold);
+            border-radius: 0 8px 8px 0;
+            font-style: italic;
+            color: var(--accent-gold);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* 最优比例提示 */
+        .optimal-tip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: rgba(92, 138, 199, 0.15);
+            border: 1px solid rgba(92, 138, 199, 0.4);
+            border-radius: 30px;
+            font-size: 14px;
+            color: var(--accent-blue);
+            margin-top: 10px;
+        }
+        .optimal-tip .icon {
+            font-size: 18px;
+        }
+
+        /* 区域导航按钮 */
+        .section-nav {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 50px;
+            z-index: 1;
+        }
+        .nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            color: var(--text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .nav-btn:hover {
+            background: rgba(212, 168, 83, 0.15);
+            border-color: rgba(212, 168, 83, 0.4);
+            color: var(--accent-gold);
+            transform: translateY(-2px);
+        }
+        .nav-btn .arrow {
+            font-size: 18px;
+            transition: transform 0.3s;
+        }
+        .nav-btn:hover .arrow-left { transform: translateX(-4px); }
+        .nav-btn:hover .arrow-right { transform: translateX(4px); }
+
+        /* 发光效果 */
+        .glow-gold {
+            animation: glowGold 2s ease-in-out infinite alternate;
+        }
+        @keyframes glowGold {
+            from { box-shadow: 0 0 20px rgba(212, 168, 83, 0.3); }
+            to { box-shadow: 0 0 40px rgba(212, 168, 83, 0.6); }
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .section-title { font-size: 32px; }
+            .section-subtitle { font-size: 16px; }
+            .scale-beam { width: 320px; }
+            .nav-container { gap: 4px; }
+            .nav-item { font-size: 11px; padding: 4px 10px; }
+            .info-cards { grid-template-columns: 1fr; }
+            .ratio-box { min-width: 100px; padding: 15px 20px; }
+            .ratio-value { font-size: 28px; }
+        }
+
+        /* 平衡指示器 */
+        .balance-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            text-shadow: 0 0 10px rgba(212, 168, 83, 0.8);
+            z-index: 20;
+        }
+        .balance-indicator.show { opacity: 1; }
+
+        /* 扑克牌装饰 */
+        .card-decoration {
+            position: absolute;
+            font-size: 60px;
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .card-deco-1 { top: 15%; left: 10%; transform: rotate(-15deg); }
+        .card-deco-2 { top: 20%; right: 12%; transform: rotate(20deg); }
+        .card-deco-3 { bottom: 25%; left: 8%; transform: rotate(10deg); }
+        .card-deco-4 { bottom: 20%; right: 10%; transform: rotate(-25deg); }
+    </style>
+</head>
+<body>
+
+    <!-- 导航栏 -->
+    <nav class="nav-bar">
+        <div class="nav-container">
+            <a href="gto-theater-range.html" class="nav-item">范围矩阵</a>
+            <a href="gto-theater-balance.html" class="nav-item active">价值/诈唬</a>
+            <a href="gto-theater-frequency.html" class="nav-item">频率</a>
+            <a href="gto-theater-odds.html" class="nav-item">赔率</a>
+            <a href="gto-theater-gametree.html" class="nav-item">游戏树</a>
+            <a href="gto-theater-position.html" class="nav-item">位置</a>
+            <a href="gto-theater-ev.html" class="nav-item">EV</a>
+            <a href="gto-theater-exploitation.html" class="nav-item">剥削</a>
+        </div>
+    </nav>
+
+    <!-- 区域2: 价值/诈唬天平 -->
+    <section id="balance">
+        <!-- 背景粒子 -->
+        <div class="particles" id="particles"></div>
+
+        <!-- 扑克牌装饰 -->
+        <div class="card-decoration card-deco-1">♠</div>
+        <div class="card-decoration card-deco-2">♥</div>
+        <div class="card-decoration card-deco-3">♦</div>
+        <div class="card-decoration card-deco-4">♣</div>
+
+        <div class="main-content">
+            <!-- 标题 -->
+            <div>
+                <h1 class="section-title">⚖️ 价值/诈唬天平</h1>
+                <p class="section-subtitle">BALANCE · 平衡策略</p>
+            </div>
+
+            <!-- 天平可视化 -->
+            <div class="balance-scale-container">
+                <div class="scale-base"></div>
+                <div class="scale-pillar"></div>
+                <div class="scale-pillar-top"></div>
+                <div class="scale-beam" id="scaleBeam">
+                    <div class="scale-pan scale-pan-left" id="panLeft">
+                        <div class="pan-chain"></div>
+                        <div class="pan-dish">
+                            <div class="chips-stack" id="chipsLeft"></div>
+                        </div>
+                        <div class="pan-label pan-label-left">价值下注</div>
+                    </div>
+                    <div class="scale-pan scale-pan-right" id="panRight">
+                        <div class="pan-chain"></div>
+                        <div class="pan-dish">
+                            <div class="chips-stack" id="chipsRight"></div>
+                        </div>
+                        <div class="pan-label pan-label-right">诈唬下注</div>
+                    </div>
+                </div>
+                <div class="balance-indicator" id="balanceIndicator">⚖️ 平衡</div>
+            </div>
+
+            <!-- 比例显示 -->
+            <div class="ratio-display">
+                <div class="ratio-box glass-card">
+                    <div class="ratio-value value" id="valuePercent">75%</div>
+                    <div class="ratio-label">价值下注</div>
+                </div>
+                <div class="ratio-divider">:</div>
+                <div class="ratio-box glass-card">
+                    <div class="ratio-value bluff" id="bluffPercent">25%</div>
+                    <div class="ratio-label">诈唬下注</div>
+                </div>
+            </div>
+
+            <!-- 滑动条 -->
+            <div class="slider-container">
+                <div class="slider-label">拖动滑块调整价值/诈唬比例</div>
+                <div class="slider-wrapper">
+                    <input type="range" id="ratioSlider" min="0" max="100" value="75">
+                </div>
+                <div class="slider-marks">
+                    <span>0% 价值</span>
+                    <span>纯诈唬</span>
+                    <span id="currentRatio">当前: 3:1</span>
+                    <span>纯价值</span>
+                    <span>100% 价值</span>
+                </div>
+            </div>
+
+            <!-- 最优比例提示 -->
+            <div class="optimal-tip">
+                <span class="icon">💡</span>
+                <span>河牌圈最优比例：<strong>3:1</strong>（价值:诈唬）—— 让对手跟注与弃牌都无利可图</span>
+            </div>
+
+            <!-- 信息卡片 -->
+            <div class="info-cards">
+                <div class="info-card">
+                    <h3>📖 什么是平衡策略？</h3>
+                    <p>
+                        在扑克中，<span class="highlight">平衡策略</span>是指你的下注范围中价值下注与诈唬下注的比例达到一个特定最优值，使得对手无论是跟注还是弃牌，都无法获得正期望值。
+                    </p>
+                    <p style="margin-top: 10px;">
+                        在河牌圈，当你下注一个底池大小时，最优比例约为 <span class="highlight">3:1</span>（75%价值，25%诈唬）。这意味着每当你诈唬一次，应该有三次价值下注来平衡。
+                    </p>
+                    <div class="memory-hook">
+                        🎭 记忆钩子：每次下注前，问自己——"如果我的对手能看穿我的手牌，他会认为我在诈唬的频率是多少？"
+                    </div>
+                </div>
+                <div class="info-card">
+                    <h3>🎯 为什么需要平衡？</h3>
+                    <p>
+                        如果你的下注<span class="highlight">太偏价值</span>（从不诈唬），对手会只在他有牌时跟注，你的价值下注无法获得支付；如果你的下注<span class="highlight">太偏诈唬</span>（总是诈唬），对手会疯狂跟注，你的诈唬将血本无归。
+                    </p>
+                    <p style="margin-top: 10px;">
+                        平衡策略的本质是<span class="highlight">不可剥削性</span>——它确保你的对手无法通过简单调整来击败你。GTO的核心不是"最大化赢多少"，而是"最小化输多少"。
+                    </p>
+                    <div class="memory-hook">
+                        🎭 记忆钩子：平衡不是五五开，而是让对手"选哪边都是错的"！
+                    </div>
+                </div>
+            </div>
+
+            <!-- 区域导航 -->
+            <div class="section-nav">
+                <a href="gto-theater-range.html" class="nav-btn">
+                    <span class="arrow arrow-left">←</span>
+                    <span>上一区域：范围矩阵</span>
+                </a>
+                <a href="gto-theater-frequency.html" class="nav-btn">
+                    <span>下一区域：频率</span>
+                    <span class="arrow arrow-right">→</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        // 生成背景粒子
+        function createParticles() {
+            const container = document.getElementById('particles');
+            for (let i = 0; i < 30; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 8 + 's';
+                particle.style.animationDuration = (6 + Math.random() * 6) + 's';
+                const size = 2 + Math.random() * 4;
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                container.appendChild(particle);
+            }
+        }
+        createParticles();
+
+        // 生成筹码
+        function createChips(container, count, type) {
+            container.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const chip = document.createElement('div');
+                chip.className = `chip chip-${type}`;
+                container.appendChild(chip);
+            }
+        }
+
+        // 更新天平倾斜
+        function updateScale(value) {
+            const valuePercent = value;
+            const bluffPercent = 100 - value;
+            const maxTilt = 25; // 最大倾斜角度
+            
+            // 计算倾斜角度：偏向诈唬侧（值小）时向右倾，偏向价值侧（值大）时向左倾
+            // 75%是平衡中心，对应0度倾斜
+            const tilt = ((75 - value) / 75) * maxTilt;
+            
+            const beam = document.getElementById('scaleBeam');
+            const panLeft = document.getElementById('panLeft');
+            const panRight = document.getElementById('panRight');
+            const indicator = document.getElementById('balanceIndicator');
+            
+            // 横梁倾斜
+            beam.style.transform = `translateX(-50%) rotate(${tilt}deg)`;
+            
+            // 托盘反向旋转保持水平
+            panLeft.style.transform = `translateX(-50%) rotate(${-tilt}deg)`;
+            panRight.style.transform = `translateX(50%) rotate(${-tilt}deg)`;
+            
+            // 更新百分比显示
+            document.getElementById('valuePercent').textContent = valuePercent + '%';
+            document.getElementById('bluffPercent').textContent = bluffPercent + '%';
+            
+            // 更新比例文字
+            const ratioText = document.getElementById('currentRatio');
+            if (bluffPercent === 0) {
+                ratioText.textContent = '当前: 纯价值';
+            } else {
+                const ratio = (valuePercent / bluffPercent).toFixed(1);
+                ratioText.textContent = `当前: ${ratio}:1`;
+            }
+            
+            // 平衡指示器
+            if (Math.abs(value - 75) < 3) {
+                indicator.classList.add('show');
+            } else {
+                indicator.classList.remove('show');
+            }
+            
+            // 更新筹码数量
+            const leftChips = Math.max(1, Math.round(valuePercent / 100 * 12));
+            const rightChips = Math.max(1, Math.round(bluffPercent / 100 * 12));
+            createChips(document.getElementById('chipsLeft'), leftChips, 'green');
+            createChips(document.getElementById('chipsRight'), rightChips, 'red');
+            
+            // 更新滑动条背景渐变
+            const slider = document.getElementById('ratioSlider');
+            slider.style.background = `linear-gradient(90deg, var(--accent-green) ${value}%, var(--accent-red) ${value}%)`;
+        }
+
+        // 初始化筹码
+        createChips(document.getElementById('chipsLeft'), 9, 'green');
+        createChips(document.getElementById('chipsRight'), 3, 'red');
+
+        // 滑动条事件
+        const slider = document.getElementById('ratioSlider');
+        slider.addEventListener('input', function() {
+            updateScale(parseInt(this.value));
+        });
+
+        // 点击快速设置按钮
+        function quickSet(value) {
+            slider.value = value;
+            updateScale(value);
+        }
+
+        // 平滑动画演示（可选）
+        function animateToValue(targetValue, duration = 1000) {
+            const startValue = parseInt(slider.value);
+            const startTime = performance.now();
+            
+            function animate(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const eased = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+                const currentValue = Math.round(startValue + (targetValue - startValue) * eased);
+                
+                slider.value = currentValue;
+                updateScale(currentValue);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // 页面加载时的入场动画
+        window.addEventListener('load', function() {
+            // 从0动画到75%（平衡位置）
+            setTimeout(() => {
+                animateToValue(75, 1500);
+            }, 500);
+        });
+
+        // 平滑滚动到锚点
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
