@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>区域1：范围转盘 - GTO扑克大剧院</title>
+<style>
+:root {
+  --bg-dark: #0d0d14;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --text-primary: #f0e6d3;
+  --text-secondary: #b8a99a;
+  --accent-gold: #d4a853;
+  --accent-red: #c75c5c;
+  --accent-green: #5cc78a;
+  --accent-blue: #5c8ac7;
+  --accent-orange: #c7a35c;
+  --glass: rgba(255, 255, 255, 0.08);
+  --glass-border: rgba(255, 255, 255, 0.15);
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  overflow-x: hidden;
+}
+
+/* ===== 导航栏 ===== */
+.nav-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(13, 13, 20, 0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 12px 20px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.nav-item {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all 0.3s;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.nav-item:hover {
+  color: var(--text-primary);
+  background: var(--glass);
+  border-color: var(--glass-border);
+}
+.nav-item.active {
+  color: var(--accent-gold);
+  border-color: var(--accent-gold);
+  background: rgba(212, 168, 83, 0.12);
+  font-weight: 600;
+}
+
+/* ===== 区域主体 ===== */
+.section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 100px 24px 80px;
+  position: relative;
+}
+
+/* 背景装饰 */
+.bg-glow {
+  position: absolute;
+  width: 500px; height: 500px;
+  border-radius: 50%;
+  filter: blur(120px);
+  opacity: 0.18;
+  pointer-events: none;
+  animation: float 8s ease-in-out infinite;
+}
+.bg-glow-1 {
+  top: 10%; left: 10%;
+  background: var(--accent-gold);
+  animation-delay: 0s;
+}
+.bg-glow-2 {
+  bottom: 10%; right: 10%;
+  background: var(--accent-blue);
+  animation-delay: 2s;
+}
+@keyframes float {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20px, -30px); }
+}
+
+/* ===== 标题区域 ===== */
+.section-header {
+  text-align: center;
+  margin-bottom: 40px;
+  position: relative;
+  z-index: 2;
+}
+.section-number {
+  font-size: 0.9rem;
+  color: var(--accent-gold);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+.section-title {
+  font-size: 2.6rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-gold));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.section-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+  font-weight: 300;
+  letter-spacing: 2px;
+}
+
+/* ===== 卡片 ===== */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 30px;
+  position: relative;
+  z-index: 2;
+}
+
+/* ===== 转盘区域 ===== */
+.wheel-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  max-width: 800px;
+  width: 100%;
+}
+
+.wheel-wrapper {
+  position: relative;
+  width: 380px;
+  height: 380px;
+}
+
+@media (max-width: 480px) {
+  .wheel-wrapper { width: 280px; height: 280px; }
+  .section-title { font-size: 1.8rem; }
+}
+
+/* 转盘主体 */
+.wheel {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  position: relative;
+  transition: transform 4s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow:
+    0 0 40px rgba(0,0,0,0.5),
+    0 0 80px rgba(212, 168, 83, 0.1),
+    inset 0 0 40px rgba(0,0,0,0.3);
+  border: 3px solid rgba(255,255,255,0.1);
+}
+
+.wheel-segment {
+  position: absolute;
+  width: 50%; height: 50%;
+  top: 50%; left: 50%;
+  transform-origin: 0 0;
+  clip-path: polygon(0 0, 100% 0, 0 0);
+  border-radius: 0 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.wheel-segment-inner {
+  position: absolute;
+  width: 200%; height: 200%;
+  top: -100%; left: -100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(45deg);
+}
+
+.segment-label {
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.95);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 480px) {
+  .segment-label { font-size: 0.75rem; }
+}
+
+/* 转盘中心 */
+.wheel-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  background: var(--bg-dark);
+  border: 3px solid var(--accent-gold);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  box-shadow: 0 0 30px rgba(212,168,83,0.3);
+}
+.wheel-center span {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent-gold);
+}
+
+/* 指针 */
+.pointer {
+  position: absolute;
+  top: -15px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+}
+.pointer svg {
+  width: 40px; height: 50px;
+}
+
+/* 转盘外圈装饰 */
+.wheel-ring {
+  position: absolute;
+  top: -10px; left: -10px;
+  right: -10px; bottom: -10px;
+  border-radius: 50%;
+  border: 2px dashed rgba(255,255,255,0.08);
+  pointer-events: none;
+  animation: spin-slow 60s linear infinite;
+}
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 旋转按钮 */
+.spin-btn {
+  padding: 14px 48px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--bg-dark);
+  background: var(--accent-gold);
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: all 0.3s;
+  letter-spacing: 2px;
+  box-shadow: 0 0 30px rgba(212,168,83,0.3);
+  position: relative;
+  overflow: hidden;
+}
+.spin-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 50px rgba(212,168,83,0.5);
+}
+.spin-btn:active {
+  transform: translateY(0);
+}
+.spin-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+.spin-btn::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  transition: left 0.5s;
+}
+.spin-btn:hover::after {
+  left: 100%;
+}
+
+/* 结果展示 */
+.result-card {
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease;
+  width: 100%;
+  max-width: 600px;
+}
+.result-card.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+.result-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+.result-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.result-desc {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.result-hands {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--accent-gold);
+  letter-spacing: 2px;
+}
+
+/* ===== 概念解释 ===== */
+.concept-card {
+  max-width: 700px;
+  width: 100%;
+  margin-top: 20px;
+}
+.concept-card h3 {
+  font-size: 1.1rem;
+  color: var(--accent-gold);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.concept-card p {
+  color: var(--text-secondary);
+  line-height: 1.8;
+  font-size: 0.95rem;
+}
+
+/* ===== 记忆钩子 ===== */
+.memory-hook {
+  max-width: 700px;
+  width: 100%;
+  margin-top: 20px;
+  border-left: 3px solid var(--accent-gold);
+  padding-left: 20px;
+}
+.memory-hook h3 {
+  font-size: 1rem;
+  color: var(--accent-gold);
+  margin-bottom: 8px;
+}
+.memory-hook p {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ===== 范围说明图例 ===== */
+.range-legend {
+  max-width: 700px;
+  width: 100%;
+  margin-top: 20px;
+}
+.range-legend h3 {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  margin-bottom: 15px;
+  text-align: center;
+}
+.legend-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.03);
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.legend-item:hover {
+  background: rgba(255,255,255,0.07);
+  transform: translateY(-2px);
+}
+.legend-dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 8px rgba(0,0,0,0.3);
+}
+.legend-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.legend-text strong {
+  color: var(--text-primary);
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+/* ===== 底部导航按钮 ===== */
+.nav-buttons {
+  display: flex;
+  gap: 20px;
+  margin-top: 40px;
+}
+.nav-btn {
+  padding: 12px 30px;
+  border-radius: 50px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-btn-prev {
+  background: transparent;
+  border: 1px solid var(--glass-border);
+  color: var(--text-secondary);
+}
+.nav-btn-prev:hover {
+  border-color: var(--text-primary);
+  color: var(--text-primary);
+  background: var(--glass);
+}
+.nav-btn-next {
+  background: var(--accent-gold);
+  border: 1px solid var(--accent-gold);
+  color: var(--bg-dark);
+}
+.nav-btn-next:hover {
+  transform: translateX(5px);
+  box-shadow: 0 0 30px rgba(212,168,83,0.4);
+}
+
+/* ===== 粒子效果 ===== */
+.particles {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+.particle {
+  position: absolute;
+  width: 3px; height: 3px;
+  background: var(--accent-gold);
+  border-radius: 50%;
+  opacity: 0.3;
+  animation: particle-float 15s infinite;
+}
+@keyframes particle-float {
+  0%, 100% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.3; }
+  90% { opacity: 0.3; }
+  100% { transform: translateY(-10vh) rotate(720deg); opacity: 0; }
+}
+
+/* ===== 动画入场 ===== */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInUp 0.8s ease forwards;
+}
+@keyframes fadeInUp {
+  to { opacity: 1; transform: translateY(0); }
+}
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+.delay-5 { animation-delay: 0.5s; }
+
+/* ===== 滚动条 ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+</style>
+</head>
+<body>
+
+<!-- 粒子背景 -->
+<div class="particles" id="particles"></div>
+
+<!-- 导航栏 -->
+<nav class="nav-bar">
+  <a href="gto-theater-range.html" class="nav-item active">范围</a>
+  <a href="gto-theater-balance.html" class="nav-item">平衡</a>
+  <a href="gto-theater-frequency.html" class="nav-item">频率</a>
+  <a href="gto-theater-odds.html" class="nav-item">赔率</a>
+  <a href="gto-theater-gametree.html" class="nav-item">博弈树</a>
+  <a href="gto-theater-position.html" class="nav-item">位置</a>
+  <a href="gto-theater-ev.html" class="nav-item">EV</a>
+  <a href="gto-theater-exploitation.html" class="nav-item">剥削</a>
+</nav>
+
+<!-- 区域1：范围转盘 -->
+<section class="section" id="section-range">
+
+  <!-- 背景光效 -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- 标题 -->
+  <div class="section-header fade-in-up">
+    <div class="section-number">区域 01</div>
+    <h1 class="section-title">入口大厅</h1>
+    <p class="section-subtitle">范围转盘 · Range</p>
+  </div>
+
+  <!-- 转盘区域 -->
+  <div class="wheel-container fade-in-up delay-2">
+
+    <div class="wheel-wrapper">
+      <!-- 外圈装饰 -->
+      <div class="wheel-ring"></div>
+
+      <!-- 指针 -->
+      <div class="pointer">
+        <svg viewBox="0 0 40 50">
+          <polygon points="20,0 40,50 20,40 0,50" fill="var(--accent-gold)" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>
+        </svg>
+      </div>
+
+      <!-- 转盘 -->
+      <div class="wheel" id="wheel">
+        <svg viewBox="0 0 400 400" style="width:100%;height:100%;">
+          <!-- 定义 -->
+          <defs>
+            <radialGradient id="grad-red" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#c75c5c"/>
+              <stop offset="100%" stop-color="#8a3a3a"/>
+            </radialGradient>
+            <radialGradient id="grad-orange" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#c7a35c"/>
+              <stop offset="100%" stop-color="#8a6f3a"/>
+            </radialGradient>
+            <radialGradient id="grad-yellow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#d4c45c"/>
+              <stop offset="100%" stop-color="#9a8f3a"/>
+            </radialGradient>
+            <radialGradient id="grad-green" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#5cc78a"/>
+              <stop offset="100%" stop-color="#3a8a5c"/>
+            </radialGradient>
+            <radialGradient id="grad-blue" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#5c8ac7"/>
+              <stop offset="100%" stop-color="#3a5a8a"/>
+            </radialGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur"/>
+              <feMerge>
+                <feMergeNode in="blur"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
+            </filter>
+          </defs>
+
+          <!-- 5个扇形区域 -->
+          <!-- 红色区域：AA/KK 等超强牌 -->
+          <path d="M 200,200 L 200,20 A 180,180 0 0,1 371,200 Z" fill="url(#grad-red)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+          <!-- 橙色区域：中小对子 -->
+          <path d="M 200,200 L 371,200 A 180,180 0 0,1 200,380 Z" fill="url(#grad-orange)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+          <!-- 黄色区域：同花连张 -->
+          <path d="M 200,200 L 200,380 A 180,180 0 0,1 29,200 Z" fill="url(#grad-yellow)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+          <!-- 绿色区域：弱牌 -->
+          <path d="M 200,200 L 29,200 A 180,180 0 0,1 115,65 Z" fill="url(#grad-green)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+          <!-- 蓝色区域：空气牌 -->
+          <path d="M 200,200 L 115,65 A 180,180 0 0,1 200,20 Z" fill="url(#grad-blue)" stroke="rgba(255,255,255,0.1)" stroke-width="2"/>
+
+          <!-- 标签文字 -->
+          <text x="285" y="110" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-size="14" font-weight="700" transform="rotate(36, 285, 110)" filter="url(#glow)">超强牌</text>
+          <text x="285" y="295" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-size="14" font-weight="700" transform="rotate(108, 285, 295)" filter="url(#glow)">中小对子</text>
+          <text x="115" y="295" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-size="14" font-weight="700" transform="rotate(180, 115, 295)" filter="url(#glow)">同花连张</text>
+          <text x="72" y="155" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-size="14" font-weight="700" transform="rotate(252, 72, 155)" filter="url(#glow)">弱牌</text>
+          <text x="157" y="110" text-anchor="middle" fill="rgba(255,255,255,0.9)" font-size="14" font-weight="700" transform="rotate(324, 157, 110)" filter="url(#glow)">空气牌</text>
+
+          <!-- 细分手牌标注（小字） -->
+          <text x="280" y="140" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" transform="rotate(36, 280, 140)">AA,KK,QQ,AKs</text>
+          <text x="280" y="260" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" transform="rotate(108, 280, 260)">22-99,TT,JJ</text>
+          <text x="120" y="260" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" transform="rotate(180, 120, 260)">T9s,87s,76s</text>
+          <text x="90" y="180" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" transform="rotate(252, 90, 180)">K2o,Q7o,J5o</text>
+          <text x="170" y="140" text-anchor="middle" fill="rgba(255,255,255,0.6)" font-size="10" transform="rotate(324, 170, 140)">72o,83o,94o</text>
+        </svg>
+
+        <!-- 中心 -->
+        <div class="wheel-center">
+          <span>?</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 旋转按钮 -->
+    <button class="spin-btn" id="spinBtn">旋 转 转 盘</button>
+
+    <!-- 结果展示 -->
+    <div class="result-card glass-card" id="resultCard">
+      <div class="result-icon" id="resultIcon">🎯</div>
+      <div class="result-title" id="resultTitle">点击旋转，看看命运给你发了什么牌</div>
+      <div class="result-desc" id="resultDesc">每一次旋转，都是一次范围的探索。了解你的起手范围，是GTO决策的第一步。</div>
+      <div class="result-hands" id="resultHands"></div>
+    </div>
+
+  </div>
+
+  <!-- 概念解释 -->
+  <div class="glass-card concept-card fade-in-up delay-3">
+    <h3>📖 什么是「范围」？</h3>
+    <p>
+      在德州扑克中，<strong>范围（Range）</strong>指的是玩家在特定情况下可能持有的所有手牌组合。GTO的核心不是猜测对手的具体牌，而是理解<strong>对手的范围</strong>以及<strong>自己的范围</strong>。当你说"我有一个强范围"时，意味着你当前可能持有的手牌整体偏强。范围思维让你从"他有什么牌"转变为"他范围里有什么牌"——这是从鱼到鲨鱼的第一步。
+    </p>
+  </div>
+
+  <!-- 记忆钩子 -->
+  <div class="memory-hook fade-in-up delay-4">
+    <h3>💡 记忆钩子</h3>
+    <p>"每次决策前，先问自己：我的范围里有哪些牌？对手的范围里有哪些牌？我的行动在范围中代表什么？"</p>
+  </div>
+
+  <!-- 范围图例 -->
+  <div class="range-legend fade-in-up delay-5">
+    <h3>🎨 范围色卡</h3>
+    <div class="legend-items">
+      <div class="legend-item" onclick="showSegmentInfo('red')">
+        <div class="legend-dot" style="background: var(--accent-red);"></div>
+        <div class="legend-text">
+          <strong>红色 · 超强牌</strong>
+          <span>AA, KK, QQ, AKs</span>
+        </div>
+      </div>
+      <div class="legend-item" onclick="showSegmentInfo('orange')">
+        <div class="legend-dot" style="background: var(--accent-orange);"></div>
+        <div class="legend-text">
+          <strong>橙色 · 中小对子</strong>
+          <span>22-99, TT, JJ</span>
+        </div>
+      </div>
+      <div class="legend-item" onclick="showSegmentInfo('yellow')">
+        <div class="legend-dot" style="background: #d4c45c;"></div>
+        <div class="legend-text">
+          <strong>黄色 · 同花连张</strong>
+          <span>T9s, 87s, 76s</span>
+        </div>
+      </div>
+      <div class="legend-item" onclick="showSegmentInfo('green')">
+        <div class="legend-dot" style="background: var(--accent-green);"></div>
+        <div class="legend-text">
+          <strong>绿色 · 弱牌</strong>
+          <span>K2o, Q7o, J5o</span>
+        </div>
+      </div>
+      <div class="legend-item" onclick="showSegmentInfo('blue')">
+        <div class="legend-dot" style="background: var(--accent-blue);"></div>
+        <div class="legend-text">
+          <strong>蓝色 · 空气牌</strong>
+          <span>72o, 83o, 94o</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部导航按钮 -->
+  <div class="nav-buttons fade-in-up delay-5">
+    <a href="#" class="nav-btn nav-btn-prev" >← 上一区域</a>
+    <a href="gto-theater-balance.html" class="nav-btn nav-btn-next">下一区域 →</a>
+  </div>
+
+</section>
+
+<script>
+// ===== 粒子效果 =====
+function createParticles() {
+  const container = document.getElementById('particles');
+  const colors = ['var(--accent-gold)', 'var(--accent-red)', 'var(--accent-blue)', 'var(--accent-green)'];
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 15 + 's';
+    p.style.animationDuration = (10 + Math.random() * 10) + 's';
+    p.style.background = colors[Math.floor(Math.random() * colors.length)];
+    p.style.width = (2 + Math.random() * 3) + 'px';
+    p.style.height = p.style.width;
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+// ===== 转盘数据 =====
+const segments = [
+  {
+    id: 'red',
+    name: '超强牌',
+    color: 'var(--accent-red)',
+    icon: '🔥',
+    desc: '翻前最强的手牌组合，通常在任何位置都值得激进游戏。这些手牌在翻后也有极高的胜率，是你范围的核心支柱。',
+    hands: 'AA, KK, QQ, AKs'
+  },
+  {
+    id: 'orange',
+    name: '中小对子',
+    color: 'var(--accent-orange)',
+    icon: '💎',
+    desc: '翻前中等强度的手牌，适合在有利位置跟注或做小额加注。在多人底池中尤其有潜力，因为翻后击中set的隐含赔率很高。',
+    hands: '22, 33, 44, 55, 66, 77, 88, 99, TT, JJ'
+  },
+  {
+    id: 'yellow',
+    name: '同花连张',
+    color: '#d4c45c',
+    icon: '🌟',
+    desc: '具有高度投机性的手牌，适合深筹码和有利位置游戏。翻后如果击中顺子或同花听牌，可以赢得巨大的底池。',
+    hands: 'T9s, 87s, 76s, 65s, 54s, JTs, QJs'
+  },
+  {
+    id: 'green',
+    name: '弱牌',
+    color: 'var(--accent-green)',
+    icon: '🌿',
+    desc: '边缘手牌，通常只在后位或有利情况下入池。这些牌需要很好的位置优势和翻后技术才能盈利。',
+    hands: 'K2o, Q7o, J5o, T6o, 98o, A4o'
+  },
+  {
+    id: 'blue',
+    name: '空气牌',
+    color: 'var(--accent-blue)',
+    icon: '💨',
+    desc: '翻前最弱的牌型，几乎总是应该直接弃牌。在某些特殊情况下（如大盲位有足够底池赔率）可以偶尔跟注。',
+    hands: '72o, 83o, 94o, 62o, 53o, 42o'
+  }
+];
+
+// ===== 转盘逻辑 =====
+let currentRotation = 0;
+let isSpinning = false;
+
+const wheel = document.getElementById('wheel');
+const spinBtn = document.getElementById('spinBtn');
+const resultCard = document.getElementById('resultCard');
+const resultIcon = document.getElementById('resultIcon');
+const resultTitle = document.getElementById('resultTitle');
+const resultDesc = document.getElementById('resultDesc');
+const resultHands = document.getElementById('resultHands');
+
+spinBtn.addEventListener('click', spinWheel);
+
+function spinWheel() {
+  if (isSpinning) return;
+  isSpinning = true;
+  spinBtn.disabled = true;
+  spinBtn.textContent = '旋转中...';
+
+  // 隐藏结果
+  resultCard.classList.remove('show');
+
+  // 随机选择目标区域
+  const targetIndex = Math.floor(Math.random() * segments.length);
+  const targetSegment = segments[targetIndex];
+
+  // 计算旋转角度（每个扇形72度，指针在顶部）
+  // 顶部是0度，顺时针旋转
+  const segmentAngle = 360 / segments.length; // 72度
+  const segmentOffset = segmentAngle / 2;
+  // 目标角度 = 让目标扇形停在顶部
+  const targetAngle = (targetIndex * segmentAngle + segmentOffset);
+
+  // 添加多圈随机旋转（至少5圈，最多10圈）
+  const extraSpins = 5 + Math.floor(Math.random() * 5);
+  const totalRotation = currentRotation + 360 * extraSpins - targetAngle;
+
+  wheel.style.transform = `rotate(${totalRotation}deg)`;
+  currentRotation = totalRotation;
+
+  // 播放音效（可选，这里用视觉反馈代替）
+  wheel.style.filter = 'brightness(1.2)';
+  setTimeout(() => { wheel.style.filter = ''; }, 200);
+
+  // 4秒后显示结果
+  setTimeout(() => {
+    showResult(targetSegment);
+    isSpinning = false;
+    spinBtn.disabled = false;
+    spinBtn.textContent = '再转一次';
+
+    // 结果卡片脉冲动画
+    resultCard.style.animation = 'pulse 0.5s ease';
+    setTimeout(() => { resultCard.style.animation = ''; }, 500);
+  }, 4000);
+}
+
+function showResult(segment) {
+  resultIcon.textContent = segment.icon;
+  resultTitle.textContent = segment.name;
+  resultDesc.textContent = segment.desc;
+  resultHands.textContent = '典型手牌：' + segment.hands;
+  resultCard.classList.add('show');
+}
+
+// 图例点击显示信息
+function showSegmentInfo(segmentId) {
+  const segment = segments.find(s => s.id === segmentId);
+  if (!segment) return;
+  showResult(segment);
+  resultCard.classList.add('show');
+
+  // 高亮对应的图例项
+  document.querySelectorAll('.legend-item').forEach(item => {
+    item.style.background = '';
+    item.style.border = '';
+  });
+  event.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+  event.currentTarget.style.border = '1px solid ' + segment.color;
+}
+
+// 添加脉冲动画
+const style = document.createElement('style');
+style.textContent = `
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+  100% { transform: scale(1); }
+}
+`;
+document.head.appendChild(style);
+
+// 初始显示结果（默认提示）
+resultCard.classList.add('show');
+</script>
+</body>
+</html>
